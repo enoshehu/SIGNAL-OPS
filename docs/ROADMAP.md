@@ -17,12 +17,12 @@ flowchart LR
 
 | Area | Status |
 |---|---|
-| DWD and DB ingestion | Complete for four Rhine–Ruhr cities, including rain and wind |
+| DWD and DB ingestion | DWD backfilled for 180 days; DB collection accumulates forward |
 | Replay and canonical storage | Complete |
 | Data-quality rules and schema checks | Complete for version 0.5 scope |
 | DB plan/change matching | Complete for the saved railway slice |
 | Static dashboard and CI | Complete |
-| Weather × railway comparison | Waiting for overlapping source hours |
+| Weather × railway comparison | Waiting for the first genuinely overlapping source hour |
 | External collaboration tools | Templates only |
 
 ## Version 1.0 — finish the case study
@@ -110,6 +110,7 @@ belongs in later releases.
 | 5 | Quality | Persisted rules, affected records, and schema snapshots |
 | 6 | Rhine–Ruhr | Four-city data, plan/change matching, analysis, and Pages preview |
 | 7 | Overlap readiness | Implementation complete; external DWD overlap gate remains active |
-| 8 | Release reconciliation | Active: exact dashboard-to-database checks in CI and live publishing |
+| 8 | Release reconciliation | Exact dashboard-to-database checks in CI and live publishing |
+| 9 | 180-day history | DWD history loaded; 180-day analytics and 30-day raw retention automated |
 
 Detailed sprint records remain under `docs/sprints/` as implementation history.

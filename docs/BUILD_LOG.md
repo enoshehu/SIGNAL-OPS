@@ -475,3 +475,27 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
 - Added the comparison to CI for committed evidence and to the live workflow before publication.
 - Kept two honest modes: the checked-in baseline traces to committed evidence; the deployed live
   view traces to the rolling database preserved in the `live-data` release.
+
+## Sprint 9 — 180-day historical window
+
+Date: 2026-09-15
+
+- Set analytical retention to 180 days and raw replay retention to 30 days. Canonical rows and
+  compact operational history remain available longer than the larger source files.
+- Added a repeatable `signalops backfill-weather --days 180` command and a machine-readable
+  historical coverage report.
+- Loaded official DWD temperature, relative humidity, precipitation, wind speed, wind direction,
+  and wind-gust archives for Düsseldorf, Duisburg, Essen, and Köln.
+- Verified 24 city/metric groups from `2026-03-18T23:00:00+00:00` through
+  `2026-09-13T23:00:00+00:00`. Most series contain 4,297 hourly observations; source gaps remain
+  visible instead of being filled with invented values.
+- The resulting local SQLite database is about 90 MB and passes its foreign-key integrity check.
+- Changed canonical observation and rail-event identities to their natural data grain, preventing
+  repeated archive downloads or snapshots from multiplying unchanged facts.
+- Kept the limitation explicit: DB Timetables provides current plans and changes, not an equivalent
+  180-day archive of historical actual movements. Railway history therefore accumulates from the
+  first successful collector run and is never fabricated.
+- The scheduled GitHub workflow restores the rolling database, refreshes public DWD data every 15
+  minutes, adds DB data when repository secrets are present, enforces both retention windows, and
+  republishes the database as the `live-data` release asset.
+- Verified formatting, static checks, and all 83 offline tests after the migration.

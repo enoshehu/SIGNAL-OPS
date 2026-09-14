@@ -30,6 +30,7 @@
 - [Sprint history](sprints/)
 - [Sprint 7 overlap record](sprints/SPRINT-07-OVERLAP-READINESS.md)
 - [Current Sprint 8 record](sprints/SPRINT-08-RELEASE-AUDIT.md)
+- [Sprint 9 historical window record](sprints/SPRINT-09-180-DAY-HISTORY.md)
 
 The root [README](../README.md) is the public entry point. Detailed sprint files are retained for
 traceability and are not required for the first review of the project.

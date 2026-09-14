@@ -109,8 +109,13 @@ def assess(
         results: list[QualityResult] = []
         for key, rule in rules.items():
             if key == "valid_timestamp":
-                affected = tuple(row[0] for row in rows if not _valid_time(row[2]))
-                results.append(_result(key, len(rows), affected, rule))
+                checked_rows = (
+                    [row for row in rows if row[2] is not None]
+                    if rule.get("allow_missing")
+                    else rows
+                )
+                affected = tuple(row[0] for row in checked_rows if not _valid_time(row[2]))
+                results.append(_result(key, len(checked_rows), affected, rule))
             elif key == "humidity_range":
                 humidity = [row for row in rows if row[3] == "relative_humidity"]
                 affected = tuple(

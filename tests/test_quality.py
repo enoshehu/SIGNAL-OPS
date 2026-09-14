@@ -14,6 +14,59 @@ from signalops.universal import normalize
 
 
 class QualityTests(unittest.TestCase):
+    def test_db_changes_allow_events_without_a_time(self) -> None:
+        definition = load_catalog(Path("config/datasets"))["db_changes"]
+        retrieved = datetime(2026, 9, 14, tzinfo=UTC)
+        artifact = RawArtifact(
+            "db",
+            "changes",
+            "changes.xml",
+            retrieved,
+            b"changes",
+            "application/xml",
+            {
+                "source_url": "https://example.invalid/changes",
+                "sha256": "changes-with-platform-only",
+                "station_eva": "8000098",
+                "feed": "changes",
+            },
+        )
+        records = [
+            RawRecord(
+                "db",
+                "stop-platform",
+                retrieved,
+                {
+                    "station_eva": "8000098",
+                    "feed": "changes",
+                    "stop_id": "stop-platform",
+                    "raw_xml": '<s id="stop-platform"><dp cp="10" /></s>',
+                },
+                {"source_url": "https://example.invalid/changes"},
+            ),
+            RawRecord(
+                "db",
+                "stop-time",
+                retrieved,
+                {
+                    "station_eva": "8000098",
+                    "feed": "changes",
+                    "stop_id": "stop-time",
+                    "raw_xml": '<s id="stop-time"><dp ct="2609141010" /></s>',
+                },
+                {"source_url": "https://example.invalid/changes"},
+            ),
+        ]
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with SQLiteRecordStore(database) as store:
+                store.store(artifact, Path("changes.xml"), records)
+            normalize(database, definition)
+            result = {item.rule: item for item in assess(database, definition)}["valid_timestamp"]
+
+        self.assertEqual(result.status, "pass")
+        self.assertEqual(result.checked, 1)
+
     def test_db_plan_quality_does_not_select_newer_changes_import(self) -> None:
         catalog = load_catalog(Path("config/datasets"))
         plan_definition = catalog["db_timetables"]

@@ -30,7 +30,7 @@ explicit quality checks, and publishes a static dashboard.
 | Planned railway events | 353 |
 | Plans matched with updates | 331 |
 | Cities | 4 |
-| Automated tests | 54 |
+| Automated tests | 55 |
 
 The saved weather window ends on 13 September 2026 and the railway window begins on 14 September
 2026. There are no paired city-hours yet, so the project does not calculate a weather–railway

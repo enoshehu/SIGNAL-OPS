@@ -28,7 +28,7 @@ were affected. Do not hide the evidence behind a made-up percentage.
 
 | Rule | Meaning | Null handling |
 |---|---|---|
-| `valid_timestamp` | Timestamp must parse and include a timezone | Invalid or absent fails |
+| `valid_timestamp` | Timestamp must parse and include a timezone | DB non-time changes may omit it |
 | `humidity_range` | Non-null relative humidity must be from 0 through 100 percent | Checked separately |
 | `value_present` | Canonical measurement value must be present | Null produces a warning |
 | `unique_observation` | Entity, timestamp, and metric must be unique inside one import | Not applicable |

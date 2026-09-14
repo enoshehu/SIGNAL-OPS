@@ -36,6 +36,7 @@ city = "koeln"
 [[quality]]
 key = "valid_timestamp"
 severity = "high"
+allow_missing = true
 
 [[quality]]
 key = "entity_integrity"

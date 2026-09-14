@@ -42,6 +42,7 @@ db_eva_number = "8000207"
 dwd_station_name = "Köln/Bonn"
 dwd_station_id = "02667"
 dwd_poi_id = "10513"
+dwd_station_role = "Köln/Bonn airport station; configured proxy for Köln Hbf"
 
 [cities.duesseldorf]
 name = "Düsseldorf"

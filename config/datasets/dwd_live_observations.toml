@@ -43,6 +43,7 @@ key = "dwd:02667"
 name = "Köln/Bonn"
 city = "koeln"
 poi_id = "10513"
+role = "Köln/Bonn airport station; configured proxy for Köln Hbf"
 latitude = 50.8645
 longitude = 7.1575
 

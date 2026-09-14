@@ -202,6 +202,8 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(essen["paired"], 1)
         self.assertEqual(essen["planned_departures"], 1)
         self.assertEqual(essen["air_temperature_c"], 19.0)
+        self.assertEqual(essen["temperature_station"], "Essen-Bredeney")
+        self.assertEqual(essen["temperature_source"], "dwd_weather")
         self.assertEqual(duisburg["rail_available"], 0)
         self.assertIsNone(duisburg["planned_events"])
 
@@ -250,6 +252,8 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(rows[0]["planned_events"], 1)
         self.assertEqual(rows[0]["matched_change_events"], 1)
         self.assertEqual(rows[0]["delayed_events"], 1)
+        self.assertEqual(rows[0]["classified_change_events"], 1)
+        self.assertAlmostEqual(rows[0]["positive_delay_minutes_total"], 10.0, places=5)
         self.assertEqual(rows[0]["average_delay_minutes"], 10.0)
         self.assertEqual(rows[1]["cancelled_events"], 1)
 

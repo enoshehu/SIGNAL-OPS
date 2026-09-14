@@ -24,7 +24,7 @@ from signalops.catalog import DatasetDefinition, load_catalog
 from signalops.config import Settings, load_settings
 from signalops.operations import run_operational_cycle
 from signalops.profile import write_profile
-from signalops.publish import write_dashboard_json
+from signalops.publish import database_publish_context, write_dashboard_json
 from signalops.quality import assess
 from signalops.retention import RetentionResult, apply_retention
 from signalops.storage import SQLiteRecordStore
@@ -353,7 +353,13 @@ def synchronize(
     )
     rows = hourly_summary(database)
     paired_hours = sum(int(row.get("paired") or 0) for row in rows)
-    write_dashboard_json(rows, project_root / "site" / "data" / "summary.json")
+    publish_context = database_publish_context(database)
+    write_dashboard_json(
+        rows,
+        project_root / "site" / "data" / "summary.json",
+        provenance={"dataDatabaseUpdatedAt": publish_context["dataDatabaseUpdatedAt"]},
+        quality_results=publish_context["qualityResults"],
+    )
     write_profile(database, settings.data_dir / "processed" / "paired_window_profile.md")
     signals_detected, incidents_opened = run_operational_cycle(database)
     return SyncSummary(

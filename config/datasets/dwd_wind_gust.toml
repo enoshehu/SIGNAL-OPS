@@ -36,6 +36,7 @@ city = "essen"
 key = "dwd:02667"
 name = "Köln/Bonn"
 city = "koeln"
+role = "Köln/Bonn airport station; configured proxy for Köln Hbf"
 
 [[quality]]
 key = "valid_timestamp"

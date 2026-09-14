@@ -1,24 +1,140 @@
 {
-  "generatedAt": "2026-09-14T21:43:04.846719+00:00",
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T23:56:58.277147+00:00",
   "status": "WAITING FOR TIME OVERLAP",
+  "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
   "pairedHours": 0,
   "weatherHours": 52800,
   "railHours": 7,
-  "windowStart": "2025-03-13T00:00:00+00:00",
-  "windowEnd": "2026-09-14T18:00:00+00:00",
-  "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
+  "windows": {
+    "weather": {
+      "start": "2025-03-13T00:00:00+00:00",
+      "end": "2026-09-13T23:00:00+00:00",
+      "cityHours": 52800
+    },
+    "rail": {
+      "start": "2026-09-14T16:00:00+00:00",
+      "end": "2026-09-14T18:00:00+00:00",
+      "cityHours": 7
+    },
+    "overlap": {
+      "start": null,
+      "end": null,
+      "cityHours": 0
+    }
+  },
+  "latestDwdAt": "2026-09-13T23:00:00+00:00",
+  "latestDbAt": "2026-09-14T18:00:00+00:00",
+  "completeness": {
+    "planned": 353,
+    "matched": 331,
+    "classified": 329,
+    "unmatched": 22,
+    "unclassified": 2,
+    "delayed": 221,
+    "cancelled": 2,
+    "positiveDelayMinutesTotal": 2925.999993905425,
+    "matchCoverage": 0.9377
+  },
+  "readiness": {
+    "ready": false,
+    "criteria": [
+      {
+        "key": "pairedHours",
+        "label": "Paired city-hours",
+        "actual": 0,
+        "required": 168,
+        "passed": false
+      },
+      {
+        "key": "pairedHoursPerCity",
+        "label": "Paired hours in every city",
+        "actual": 0,
+        "required": 24,
+        "passed": false
+      },
+      {
+        "key": "overlapSpanHours",
+        "label": "Overlap time span",
+        "actual": 0,
+        "required": 72,
+        "passed": false
+      },
+      {
+        "key": "overlapCoverage",
+        "label": "Expected city-hour coverage",
+        "actual": 0.0,
+        "required": 0.5,
+        "passed": false
+      },
+      {
+        "key": "matchCoverage",
+        "label": "DB matching coverage in every city",
+        "actual": 0.7349,
+        "required": 0.8,
+        "passed": false
+      },
+      {
+        "key": "sourceHealth",
+        "label": "No failed or stale source",
+        "actual": false,
+        "required": true,
+        "passed": false
+      }
+    ]
+  },
+  "collection": {
+    "pipelineCadenceMinutes": 15,
+    "browserPollSeconds": 60,
+    "analysisRetentionDays": 180,
+    "rawEvidenceRetentionDays": 30,
+    "explanation": "The browser checks the latest published JSON every 60 seconds. Collection runs separately on a nominal 15-minute GitHub Actions schedule."
+  },
+  "provenance": {
+    "gitSha": "unknown",
+    "workflowRunId": "local",
+    "dataDatabaseUpdatedAt": "2026-09-14T18:10:45.692181+00:00"
+  },
   "cities": [
     {
       "key": "duesseldorf",
       "name": "Düsseldorf",
       "plans": 95,
       "matched": 95,
+      "classified": 95,
+      "unmatched": 0,
+      "unclassified": 0,
       "cancelled": 0,
       "delayed": 66,
+      "matchCoverage": 1.0,
+      "coverageState": "READY",
+      "positiveDelayRate": 0.6947,
+      "positiveDelayMinutesTotal": 842.9999980330467,
       "meanDelay": 12.8,
       "maxDelay": 84.0,
+      "pairedHours": 0,
+      "pairedWindow": {
+        "start": null,
+        "end": null,
+        "cityHours": 0
+      },
       "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "weatherStation": "Düsseldorf",
+      "weatherProvenance": {
+        "temperature": {
+          "station": "Düsseldorf",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        },
+        "humidity": {
+          "station": "Düsseldorf",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        }
+      },
       "temperature": 17.8,
       "humidity": 98.0,
       "precipitation": null,
@@ -30,12 +146,40 @@
       "name": "Duisburg",
       "plans": 83,
       "matched": 61,
+      "classified": 59,
+      "unmatched": 22,
+      "unclassified": 2,
       "cancelled": 0,
       "delayed": 47,
-      "meanDelay": 19.9,
+      "matchCoverage": 0.7349,
+      "coverageState": "DEGRADED",
+      "positiveDelayRate": 0.7705,
+      "positiveDelayMinutesTotal": 931.9999974220991,
+      "meanDelay": 19.8,
       "maxDelay": 83.0,
+      "pairedHours": 0,
+      "pairedWindow": {
+        "start": null,
+        "end": null,
+        "cityHours": 0
+      },
       "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "weatherStation": "Duisburg-Baerl",
+      "weatherProvenance": {
+        "temperature": {
+          "station": "Duisburg-Baerl",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        },
+        "humidity": {
+          "station": "Duisburg-Baerl",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        }
+      },
       "temperature": 16.3,
       "humidity": 95.0,
       "precipitation": null,
@@ -47,12 +191,40 @@
       "name": "Essen",
       "plans": 51,
       "matched": 51,
+      "classified": 51,
+      "unmatched": 0,
+      "unclassified": 0,
       "cancelled": 0,
       "delayed": 35,
+      "matchCoverage": 1.0,
+      "coverageState": "READY",
+      "positiveDelayRate": 0.6863,
+      "positiveDelayMinutesTotal": 182.99999848008156,
       "meanDelay": 5.2,
       "maxDelay": 27.0,
+      "pairedHours": 0,
+      "pairedWindow": {
+        "start": null,
+        "end": null,
+        "cityHours": 0
+      },
       "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "weatherStation": "Essen-Bredeney",
+      "weatherProvenance": {
+        "temperature": {
+          "station": "Essen-Bredeney",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        },
+        "humidity": {
+          "station": "Essen-Bredeney",
+          "role": "Configured city weather proxy",
+          "dataset": "dwd_weather",
+          "provisional": false
+        }
+      },
       "temperature": 15.5,
       "humidity": 97.0,
       "precipitation": null,
@@ -64,12 +236,40 @@
       "name": "Köln",
       "plans": 124,
       "matched": 124,
+      "classified": 124,
+      "unmatched": 0,
+      "unclassified": 0,
       "cancelled": 2,
       "delayed": 73,
+      "matchCoverage": 1.0,
+      "coverageState": "READY",
+      "positiveDelayRate": 0.5887,
+      "positiveDelayMinutesTotal": 967.9999999701977,
       "meanDelay": 13.3,
       "maxDelay": 90.0,
+      "pairedHours": 0,
+      "pairedWindow": {
+        "start": null,
+        "end": null,
+        "cityHours": 0
+      },
       "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "weatherStation": "Köln/Bonn",
+      "weatherProvenance": {
+        "temperature": {
+          "station": "Köln/Bonn",
+          "role": "Köln/Bonn airport station; configured proxy for Köln Hbf",
+          "dataset": "dwd_weather",
+          "provisional": false
+        },
+        "humidity": {
+          "station": "Köln/Bonn",
+          "role": "Köln/Bonn airport station; configured proxy for Köln Hbf",
+          "dataset": "dwd_weather",
+          "provisional": false
+        }
+      },
       "temperature": 16.6,
       "humidity": 97.0,
       "precipitation": null,
@@ -80,23 +280,55 @@
   "sources": [
     {
       "name": "DWD Weather",
-      "state": "READY",
-      "detail": "52800 city-hours"
+      "state": "STALE",
+      "detail": "52800 retained city-hours",
+      "reason": "The latest retained observation exceeds its freshness limit.",
+      "latestAt": "2026-09-13T23:00:00+00:00",
+      "ageMinutes": 1496,
+      "quality": {
+        "checks": 0,
+        "warnings": 0,
+        "failures": 0
+      }
     },
     {
       "name": "DB Plans",
-      "state": "READY",
-      "detail": "353 timetable events"
+      "state": "STALE",
+      "detail": "353 retained timetable events",
+      "reason": "The latest retained observation exceeds its freshness limit.",
+      "latestAt": "2026-09-14T18:00:00+00:00",
+      "ageMinutes": 356,
+      "quality": {
+        "checks": 0,
+        "warnings": 0,
+        "failures": 0
+      }
     },
     {
       "name": "DB Changes",
-      "state": "READY",
-      "detail": "331 matched events"
+      "state": "STALE",
+      "detail": "331 of 353 plans matched",
+      "reason": "The latest retained observation exceeds its freshness limit.",
+      "latestAt": "2026-09-14T18:00:00+00:00",
+      "ageMinutes": 356,
+      "quality": {
+        "checks": 0,
+        "warnings": 0,
+        "failures": 0
+      }
     },
     {
       "name": "Paired analysis",
       "state": "WAITING",
-      "detail": "0 overlapping city-hours"
+      "detail": "0 overlapping city-hours",
+      "reason": "Readiness gates remain open.",
+      "latestAt": null,
+      "ageMinutes": null,
+      "quality": {
+        "checks": 6,
+        "warnings": 0,
+        "failures": 0
+      }
     }
   ]
 }

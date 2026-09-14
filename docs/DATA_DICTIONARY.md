@@ -32,8 +32,10 @@ Grain: one city and UTC hour per row.
 | `planned_departures` | Count of planned departure events; null when rail data is unavailable |
 | `planned_events` | Planned arrivals plus departures; null when rail data is unavailable |
 | `matched_change_events` | Planned events with a matching full-change event by station, stop ID, and event type |
+| `classified_change_events` | Matched events with a usable changed time or cancellation outcome |
 | `cancelled_events` | Matched events whose DB change status is `cs="c"` |
 | `delayed_events` | Matched, non-cancelled events with changed time later than planned time |
+| `positive_delay_minutes_total` | Unrounded sum of positive delay minutes used for higher-level means |
 | `average_delay_minutes` | Mean positive delay among delayed events; null when none are observed |
 | `maximum_delay_minutes` | Largest positive delay among delayed events; null when none are observed |
 | `air_temperature_c` | DWD hourly air temperature in degrees Celsius |
@@ -42,6 +44,9 @@ Grain: one city and UTC hour per row.
 | `wind_speed_m_s` | DWD hourly mean wind speed in metres per second |
 | `wind_gust_m_s` | DWD maximum wind gust during the last hour in metres per second |
 | `wind_direction_deg` | DWD hourly mean wind direction in degrees |
+| `*_station` | DWD station selected for that weather metric |
+| `*_station_role` | Configured direct/proxy role for the selected DWD station |
+| `*_source` | Dataset that supplied the selected value; live observations are provisional |
 | `weather_available` | `1` if a weather row exists, otherwise `0` |
 | `rail_available` | `1` if a railway row exists, otherwise `0` |
 | `paired` | `1` only when both sources exist for the city and hour |
@@ -52,3 +57,11 @@ It keeps the latest row for each DB stop ID and arrival/departure type. Plan and
 change rows are joined only on that stable key. Change events without a saved plan counterpart are
 excluded from delay and cancellation metrics because their denominator is unknown. The export
 does not calculate disruption rates or causal weather effects.
+
+## Dashboard payload
+
+Schema version 2 publishes separate weather, rail, and overlap windows. It also includes
+planned → matched → classified completeness; positive-delay rates among matched events;
+per-reading DWD station and provisional/final provenance; quality- and freshness-derived
+source states; explicit multi-criterion readiness; and commit, workflow-run, and database
+update provenance. Browser polling is reported separately from source collection cadence.

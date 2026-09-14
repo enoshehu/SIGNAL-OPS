@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Live Rhine–Ruhr rail performance and weather monitoring for Düsseldorf, Duisburg, Essen and Köln">
+  <meta name="description" content="Published Rhine–Ruhr rail performance and weather monitoring for Düsseldorf, Duisburg, Essen and Köln">
   <meta name="theme-color" content="#e8e3d6">
   <title>SIGNAL//OPS — Rhine–Ruhr Rail Monitor</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -21,6 +21,7 @@
     <nav aria-label="Primary navigation">
       <a href="#cities">Stations</a>
       <a href="#weather">Weather</a>
+      <a href="#collection">Collection</a>
       <a href="#method">Data rules</a>
       <a href="https://github.com/enoshehu/SIGNAL-OPS">GitHub</a>
     </nav>
@@ -32,7 +33,7 @@
   <main id="overview">
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy reveal">
-        <p class="eyebrow"><span class="status-dot"></span>180-day rolling monitor / four main stations</p>
+        <p class="eyebrow"><span class="status-dot"></span>Published 180-day rolling monitor / four main stations</p>
         <h1 id="page-title"><span>Rail performance.</span><br><em>Weather context.</em></h1>
         <p class="lede">Track delays and cancellations at Düsseldorf, Duisburg, Essen and Köln. When rail and weather records cover the same UTC hour, the monitor compares them automatically.</p>
         <div class="hero-actions">
@@ -52,7 +53,7 @@
           <div><dt>Published</dt><dd id="generated">loading</dd></div>
           <div><dt>Browser check</dt><dd id="checked">loading</dd></div>
         </dl>
-        <button class="panel-refresh" id="data-refresh" type="button">Refresh now</button>
+        <button class="panel-refresh" id="data-refresh" type="button">Check for published update</button>
       </aside>
     </section>
 
@@ -88,7 +89,7 @@
         <section class="chart-panel" aria-labelledby="delay-title">
           <div class="panel-heading">
             <div><span class="panel-index">A</span><h3 id="delay-title">Positive delay share</h3></div>
-            <span>Delayed events ÷ planned events</span>
+            <span>Positive delays ÷ matched change events</span>
           </div>
           <div id="delay-chart" class="bars"></div>
         </section>
@@ -100,18 +101,26 @@
           <div class="table-wrap">
             <table>
               <caption class="visually-hidden">Railway plan and delay details by city</caption>
-              <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Mean +delay</th><th>Maximum</th></tr></thead>
+              <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Coverage</th><th>Classified</th><th>Mean +delay</th><th>Maximum</th></tr></thead>
               <tbody id="city-table"></tbody>
             </table>
           </div>
         </section>
       </div>
+
+      <section class="completeness reveal" aria-labelledby="completeness-title">
+        <div class="panel-heading">
+          <div><span class="panel-index">C</span><h3 id="completeness-title">Data completeness</h3></div>
+          <span>Unknown records are not treated as on-time</span>
+        </div>
+        <div class="completeness-flow" id="completeness-flow"></div>
+      </section>
     </section>
 
     <section class="systems" id="weather" aria-labelledby="systems-title">
       <div class="section-heading reveal">
         <div><p class="section-number">02 / Weather conditions</p><h2 id="systems-title">Latest readings by city.</h2></div>
-        <p class="section-intro">Temperature, rain and wind come from nearby DWD stations. These readings become comparable with rail performance only when both cover the same city and UTC hour.</p>
+        <p class="section-intro">Temperature, rain and wind come from configured nearby DWD proxy stations—not sensors at each Hauptbahnhof. Each card discloses the station and whether the selected value is provisional or final.</p>
       </div>
 
       <div class="weather-grid reveal" id="weather-grid" aria-live="polite"></div>
@@ -121,7 +130,7 @@
           <div class="system-icon" aria-hidden="true">≈</div>
           <p>DWD hourly observations</p>
           <h3>Weather records</h3>
-          <span class="system-state"><i></i> Download active</span>
+          <span class="system-state"><i></i> Scheduled collection</span>
           <small>Temperature · humidity · precipitation · wind · gusts</small>
         </article>
 
@@ -136,7 +145,7 @@
           <div class="system-icon" aria-hidden="true">⇥</div>
           <p>DB timetable feed</p>
           <h3>Rail records</h3>
-          <span class="system-state"><i></i> Download active</span>
+          <span class="system-state"><i></i> Scheduled collection</span>
           <small>Plans · changes · cancellations</small>
         </article>
       </div>
@@ -144,16 +153,28 @@
       <div class="source-grid reveal" id="source-list"></div>
     </section>
 
+    <section class="collection" id="collection" aria-labelledby="collection-title">
+      <div class="section-heading reveal">
+        <div><p class="section-number">03 / Data collection</p><h2 id="collection-title">What updates,<br>when, and from where.</h2></div>
+        <p class="section-intro">The website is a published snapshot. Its one-minute browser check is separate from source collection, processing, and deployment. Times below come from the payload itself.</p>
+      </div>
+      <div class="collection-grid reveal" id="collection-grid"></div>
+      <div class="readiness reveal">
+        <div><p class="kicker">Analysis gate</p><h3>Overlap alone is not enough.</h3><p>Every threshold must pass before the site labels the dataset analysis-ready.</p></div>
+        <ul id="readiness-list"></ul>
+      </div>
+    </section>
+
     <section class="method" id="method" aria-labelledby="method-title">
       <div class="method-header reveal">
-        <p class="section-number">03 / Processing rules</p>
+        <p class="section-number">04 / Processing rules</p>
         <h2 id="method-title">How the numbers<br>are produced.</h2>
       </div>
       <div class="method-steps reveal">
-        <article><span>01</span><h3>Download</h3><p>GitHub Actions fetches DWD weather and DB timetable changes every 15 minutes.</p></article>
+        <article><span>01</span><h3>Download</h3><p>GitHub Actions is scheduled every 15 minutes. Each run fetches sources that are due; queued or failed runs can delay publication.</p></article>
         <article><span>02</span><h3>Retain history</h3><p>Analysis keeps 180 days. Original downloads remain available for 30 days for replay and recovery.</p></article>
         <article><span>03</span><h3>Match</h3><p>Plans and changes match by station, stop ID and event type. Weather matches by city and UTC hour.</p></article>
-        <article><span>04</span><h3>Report</h3><p>Missing and unmatched records stay visible and are never counted as zero.</p></article>
+        <article><span>04</span><h3>Report</h3><p>Delay rate uses matched events. Missing, unmatched and unclassified records stay visible and are never counted as on-time or zero.</p></article>
       </div>
       <div class="method-statement reveal">
         <span>Comparison rule</span>

@@ -7,11 +7,12 @@ import json
 import re
 import sqlite3
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 from signalops.analysis import hourly_summary
 from signalops.catalog import load_catalog
-from signalops.publish import dashboard_payload
+from signalops.publish import dashboard_payload, database_publish_context
 
 
 def tracked_files(root: Path) -> tuple[Path, ...]:
@@ -19,12 +20,21 @@ def tracked_files(root: Path) -> tuple[Path, ...]:
     return tuple(root / item.decode() for item in result.stdout.split(b"\0") if item)
 
 
-def dashboard_differences(rows: list[dict[str, object]], actual: dict[str, object]) -> list[str]:
-    """Compare published values while ignoring the generation timestamp."""
-    expected = dashboard_payload(rows)
-    expected.pop("generatedAt", None)
+def dashboard_differences(
+    rows: list[dict[str, object]],
+    actual: dict[str, object],
+    context: dict[str, object] | None = None,
+) -> list[str]:
+    """Rebuild the payload at its recorded generation time and compare every field."""
+    context = context or {}
+    generated_at = datetime.fromisoformat(str(actual["generatedAt"]))
+    expected = dashboard_payload(
+        rows,
+        generated_at=generated_at,
+        provenance={"dataDatabaseUpdatedAt": context.get("dataDatabaseUpdatedAt")},
+        quality_results=context.get("qualityResults", {}),
+    )
     comparable = dict(actual)
-    comparable.pop("generatedAt", None)
     if comparable == expected:
         return []
     return ["dashboard summary does not match the rebuilt evidence database"]
@@ -67,7 +77,8 @@ def check_repository(root: Path, database: Path | None = None) -> list[str]:
             if violations:
                 errors.append(f"database has {len(violations)} foreign-key violations")
         if dashboard is not None:
-            errors.extend(dashboard_differences(hourly_summary(database), dashboard))
+            context = database_publish_context(database)
+            errors.extend(dashboard_differences(hourly_summary(database), dashboard, context))
     return errors
 
 

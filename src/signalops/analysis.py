@@ -16,8 +16,10 @@ COLUMNS = (
     "planned_departures",
     "planned_events",
     "matched_change_events",
+    "classified_change_events",
     "cancelled_events",
     "delayed_events",
+    "positive_delay_minutes_total",
     "average_delay_minutes",
     "maximum_delay_minutes",
     "air_temperature_c",
@@ -26,6 +28,21 @@ COLUMNS = (
     "wind_speed_m_s",
     "wind_gust_m_s",
     "wind_direction_deg",
+    "temperature_station",
+    "temperature_station_role",
+    "temperature_source",
+    "humidity_station",
+    "humidity_station_role",
+    "humidity_source",
+    "precipitation_station",
+    "precipitation_station_role",
+    "precipitation_source",
+    "wind_station",
+    "wind_station_role",
+    "wind_source",
+    "gust_station",
+    "gust_station_role",
+    "gust_source",
     "weather_available",
     "rail_available",
     "paired",
@@ -70,7 +87,37 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
              MAX(CASE WHEN o.metric = 'wind_gust' THEN o.value END)
                AS wind_gust_m_s,
              MAX(CASE WHEN o.metric = 'wind_direction' THEN o.value END)
-               AS wind_direction_deg
+               AS wind_direction_deg,
+             MAX(CASE WHEN o.metric = 'air_temperature' THEN e.name END)
+               AS temperature_station,
+             MAX(CASE WHEN o.metric = 'air_temperature' THEN o.station_role END)
+               AS temperature_station_role,
+             MAX(CASE WHEN o.metric = 'air_temperature' THEN o.dataset_key END)
+               AS temperature_source,
+             MAX(CASE WHEN o.metric = 'relative_humidity' THEN e.name END)
+               AS humidity_station,
+             MAX(CASE WHEN o.metric = 'relative_humidity' THEN o.station_role END)
+               AS humidity_station_role,
+             MAX(CASE WHEN o.metric = 'relative_humidity' THEN o.dataset_key END)
+               AS humidity_source,
+             MAX(CASE WHEN o.metric = 'precipitation' THEN e.name END)
+               AS precipitation_station,
+             MAX(CASE WHEN o.metric = 'precipitation' THEN o.station_role END)
+               AS precipitation_station_role,
+             MAX(CASE WHEN o.metric = 'precipitation' THEN o.dataset_key END)
+               AS precipitation_source,
+             MAX(CASE WHEN o.metric = 'wind_speed' THEN e.name END)
+               AS wind_station,
+             MAX(CASE WHEN o.metric = 'wind_speed' THEN o.station_role END)
+               AS wind_station_role,
+             MAX(CASE WHEN o.metric = 'wind_speed' THEN o.dataset_key END)
+               AS wind_source,
+             MAX(CASE WHEN o.metric = 'wind_gust' THEN e.name END)
+               AS gust_station,
+             MAX(CASE WHEN o.metric = 'wind_gust' THEN o.station_role END)
+               AS gust_station_role,
+             MAX(CASE WHEN o.metric = 'wind_gust' THEN o.dataset_key END)
+               AS gust_source
       FROM latest_weather o
       JOIN entities e ON e.entity_key = o.entity_key
       GROUP BY city, hour_utc
@@ -144,12 +191,18 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
              COUNT(*) AS planned_events,
              SUM(CASE WHEN s.change_event_id IS NOT NULL THEN 1 ELSE 0 END)
                AS matched_change_events,
+             SUM(CASE WHEN s.change_status = 'cancelled' OR s.current_at IS NOT NULL
+                      THEN 1 ELSE 0 END) AS classified_change_events,
              SUM(CASE WHEN s.change_status = 'cancelled' THEN 1 ELSE 0 END)
                AS cancelled_events,
              SUM(CASE WHEN s.change_status != 'cancelled'
                             AND s.current_at IS NOT NULL
                             AND julianday(s.current_at) > julianday(s.planned_at)
                       THEN 1 ELSE 0 END) AS delayed_events,
+             SUM(CASE WHEN s.change_status != 'cancelled'
+                            AND julianday(s.current_at) > julianday(s.planned_at)
+                      THEN (julianday(s.current_at) - julianday(s.planned_at)) * 1440
+                      ELSE 0 END) AS positive_delay_minutes_total,
              ROUND(AVG(CASE WHEN s.change_status != 'cancelled'
                                   AND julianday(s.current_at) > julianday(s.planned_at)
                             THEN (julianday(s.current_at) - julianday(s.planned_at)) * 1440
@@ -170,10 +223,16 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
     )
     SELECT h.city, h.hour_utc, r.rail_station, w.weather_station,
            r.planned_arrivals, r.planned_departures, r.planned_events,
-           r.matched_change_events, r.cancelled_events, r.delayed_events,
+           r.matched_change_events, r.classified_change_events,
+           r.cancelled_events, r.delayed_events, r.positive_delay_minutes_total,
            r.average_delay_minutes, r.maximum_delay_minutes,
            w.air_temperature_c, w.relative_humidity_pct, w.precipitation_mm,
            w.wind_speed_m_s, w.wind_gust_m_s, w.wind_direction_deg,
+           w.temperature_station, w.temperature_station_role, w.temperature_source,
+           w.humidity_station, w.humidity_station_role, w.humidity_source,
+           w.precipitation_station, w.precipitation_station_role, w.precipitation_source,
+           w.wind_station, w.wind_station_role, w.wind_source,
+           w.gust_station, w.gust_station_role, w.gust_source,
            CASE WHEN w.city IS NULL THEN 0 ELSE 1 END AS weather_available,
            CASE WHEN r.city IS NULL THEN 0 ELSE 1 END AS rail_available,
            CASE WHEN w.city IS NOT NULL AND r.city IS NOT NULL THEN 1 ELSE 0 END AS paired

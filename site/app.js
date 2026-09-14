@@ -20,18 +20,29 @@ function colourFor(cityKey, cities) {
   return cityColours[index % cityColours.length];
 }
 
+function percent(value) {
+  return value === null || value === undefined ? "Not available" : `${format.format(Number(value) * 100)}%`;
+}
+
+function timestamp(value) {
+  if (!value) return "Not available";
+  return `${new Date(value).toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+  })} UTC`;
+}
+
 function renderMetrics(rows) {
   const plans = total(rows, "plans");
   const matched = total(rows, "matched");
   const delayed = total(rows, "delayed");
   const cancelled = total(rows, "cancelled");
   const weightedDelay = delayed
-    ? rows.reduce((sum, row) => sum + Number(row.meanDelay ?? 0) * Number(row.delayed ?? 0), 0) / delayed
+    ? rows.reduce((sum, row) => sum + Number(row.positiveDelayMinutesTotal ?? 0), 0) / delayed
     : null;
   const metrics = [
     ["Planned events", format.format(plans), "Retained timetable slice", "#397a9e"],
-    ["Matched changes", format.format(matched), plans ? `${format.format((matched / plans) * 100)}% of plans` : "Not available", "#88a61b"],
-    ["Positive delays", format.format(delayed), weightedDelay === null ? "Mean unavailable" : `${format.format(weightedDelay)} min weighted mean`, "#ff4d24"],
+    ["Match coverage", percent(plans ? matched / plans : null), `${format.format(matched)} of ${format.format(plans)} plans matched`, "#88a61b"],
+    ["Positive delay rate", percent(matched ? delayed / matched : null), weightedDelay === null ? "Among matched events · mean unavailable" : `${format.format(weightedDelay)} min mean among positive delays`, "#ff4d24"],
     ["Cancellations", format.format(cancelled), matched ? `${format.format((cancelled / matched) * 100)}% of matched events` : "Not available", "#a15b9a"],
   ];
 
@@ -49,18 +60,18 @@ function renderMetrics(rows) {
 
 function renderCities(rows, allCities) {
   const maxShare = Math.max(
-    ...rows.map((row) => (row.plans ? row.delayed / row.plans : 0)),
+    ...rows.map((row) => (row.matched ? row.delayed / row.matched : 0)),
     0.01,
   );
 
   document.querySelector("#delay-chart").innerHTML = rows
     .map((row, index) => {
-      const share = row.plans ? row.delayed / row.plans : 0;
+      const share = row.matched ? row.delayed / row.matched : 0;
       const colour = colourFor(row.key, allCities);
       return `
         <div class="bar-row" style="--city-color:${colour}">
           <span class="bar-name"><i class="city-symbol" aria-hidden="true"></i>${escapeHTML(row.name)}</span>
-          <div class="bar-track" role="img" aria-label="${escapeHTML(row.name)}: ${format.format(share * 100)} percent of planned events had a positive delay">
+          <div class="bar-track" role="img" aria-label="${escapeHTML(row.name)}: ${format.format(share * 100)} percent of matched events had a positive delay">
             <div class="bar-fill" style="width:${(share / maxShare) * 100}%;animation-delay:${index * 90}ms"></div>
           </div>
           <b>${format.format(share * 100)}%</b>
@@ -76,6 +87,8 @@ function renderCities(rows, allCities) {
           <td><span class="table-city"><i class="city-symbol" aria-hidden="true"></i>${escapeHTML(row.name)}</span></td>
           <td>${format.format(row.plans)}</td>
           <td>${format.format(row.matched)}</td>
+          <td><span class="coverage-state ${String(row.coverageState).toLowerCase()}">${percent(row.matchCoverage)}${row.coverageState === "DEGRADED" ? " warning" : ""}</span></td>
+          <td>${format.format(row.classified)}</td>
           <td>${row.meanDelay === null ? "Not available" : `${format.format(row.meanDelay)} min`}</td>
           <td>${row.maxDelay === null ? "Not available" : `${format.format(row.maxDelay)} min`}</td>
         </tr>`;
@@ -120,6 +133,11 @@ function renderWeather(cities) {
       const observedLabel = observed
         ? `${observed.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC`
         : "No retained reading";
+      const provenance = Object.values(city.weatherProvenance ?? {});
+      const stations = [...new Map(provenance.map((item) => [item.station, item])).values()];
+      const stationLabel = stations.length
+        ? stations.map((item) => `${item.station} — ${item.role}${item.provisional ? " (provisional live value)" : " (final CDC value)"}`).join("; ")
+        : "Station provenance not available";
       return `
         <article class="weather-reading" style="--city-color:${colourFor(city.key, cities)}">
           <header><h3>${escapeHTML(city.name)}</h3><i aria-hidden="true"></i></header>
@@ -131,6 +149,7 @@ function renderWeather(cities) {
             <div><dt>Gust</dt><dd>${escapeHTML(reading(city.windGust, "m/s"))}</dd></div>
           </dl>
           <p>${escapeHTML(observedLabel)} · ${format.format(city.weatherHours ?? 0)} retained hours</p>
+          <small class="station-provenance">Weather proxy: ${escapeHTML(stationLabel)}</small>
         </article>`;
     })
     .join("");
@@ -147,7 +166,7 @@ function updateRoute(selectedCity) {
 function renderSources(sources) {
   document.querySelector("#source-list").innerHTML = sources
     .map((source, index) => {
-      const state = source.state === "READY" ? "ready" : "waiting";
+      const state = String(source.state).toLowerCase();
       return `
         <article class="source">
           <div class="source-head">
@@ -156,9 +175,43 @@ function renderSources(sources) {
           </div>
           <h3>${escapeHTML(source.name)}</h3>
           <small>${escapeHTML(source.detail)}</small>
+          <p>${escapeHTML(source.reason ?? "")}</p>
         </article>`;
     })
     .join("");
+}
+
+function renderCompleteness(data) {
+  const values = data.completeness;
+  const steps = [
+    ["Planned", values.planned, "DB timetable events retained"],
+    ["Matched", values.matched, `${percent(values.matchCoverage)} of plans have a DB change record`],
+    ["Classified", values.classified, `${format.format(values.unclassified)} matched events still lack a usable outcome`],
+    ["Positive delay", values.delayed, `${format.format(values.cancelled)} cancellations reported separately`],
+  ];
+  document.querySelector("#completeness-flow").innerHTML = steps.map(([label, value, note], index) => `
+    <article><span>0${index + 1}</span><h3>${escapeHTML(label)}</h3><strong>${format.format(value)}</strong><p>${escapeHTML(note)}</p></article>
+  `).join("");
+}
+
+function renderCollection(data) {
+  const windows = data.windows;
+  const provenance = data.provenance;
+  const windowLabel = (window) => window.start ? `${timestamp(window.start)} → ${timestamp(window.end)}` : "No shared window";
+  const details = [
+    ["Collection schedule", `Nominally every ${data.collection.pipelineCadenceMinutes} minutes`, "GitHub Actions fetches and processes due sources; schedules may queue."],
+    ["Browser polling", `Every ${data.collection.browserPollSeconds} seconds`, "This only checks for a newly published JSON file. It does not recollect source data."],
+    ["Latest DWD observation", timestamp(data.latestDwdAt), `Weather window: ${windowLabel(windows.weather)}`],
+    ["Latest DB observation", timestamp(data.latestDbAt), `Rail window: ${windowLabel(windows.rail)}`],
+    ["Paired overlap", windowLabel(windows.overlap), `${format.format(windows.overlap.cityHours)} paired city-hours`],
+    ["Deployment provenance", provenance.gitSha === "unknown" ? "Local / unavailable" : provenance.gitSha.slice(0, 12), `Workflow ${provenance.workflowRunId} · database updated ${timestamp(provenance.dataDatabaseUpdatedAt)}`],
+  ];
+  document.querySelector("#collection-grid").innerHTML = details.map(([label, value, note]) => `
+    <article><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong><p>${escapeHTML(note)}</p></article>
+  `).join("");
+  document.querySelector("#readiness-list").innerHTML = data.readiness.criteria.map((criterion) => `
+    <li class="${criterion.passed ? "passed" : "open"}"><b>${criterion.passed ? "Pass" : "Open"}</b><span>${escapeHTML(criterion.label)}</span><small>Actual: ${escapeHTML(criterion.actual)} · required: ${escapeHTML(criterion.required)}</small></li>
+  `).join("");
 }
 
 function configureTheme() {
@@ -192,7 +245,7 @@ let secondsUntilRefresh = 60;
 async function loadData() {
   const refreshButton = document.querySelector("#data-refresh");
   refreshButton.disabled = true;
-  refreshButton.textContent = "Refreshing…";
+  refreshButton.textContent = "Checking published data…";
   const response = await fetch(`data/summary.json?checked=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error("Dashboard data could not be loaded");
   const data = await response.json();
@@ -226,6 +279,8 @@ async function loadData() {
 
   renderSources(data.sources);
   renderWeather(data.cities);
+  renderCompleteness(data);
+  renderCollection(data);
 
   const select = document.querySelector("#city-select");
   select.replaceChildren(new Option("All four cities", "all"));
@@ -248,7 +303,7 @@ async function loadData() {
   render();
   secondsUntilRefresh = 60;
   refreshButton.disabled = false;
-  refreshButton.textContent = "Refresh now";
+  refreshButton.textContent = "Check for published update";
 }
 
 async function start() {
@@ -259,7 +314,7 @@ async function start() {
   window.setInterval(() => {
     secondsUntilRefresh -= 1;
     if (secondsUntilRefresh <= 0) loadData().catch(showError);
-    else if (!refreshButton.disabled) refreshButton.textContent = `Refresh now · ${secondsUntilRefresh}s`;
+    else if (!refreshButton.disabled) refreshButton.textContent = `Check for published update · ${secondsUntilRefresh}s`;
   }, 1000);
 }
 

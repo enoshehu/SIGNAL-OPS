@@ -67,7 +67,7 @@ Valid city keys are `duisburg`, `essen`, `duesseldorf`, and `koeln`.
 
 ## Verification
 
-- Full offline suite: 35 tests pass.
+- Full offline suite: 36 tests pass.
 - Live DB subscription: verified.
 - Live DB rail records: 241 raw stop records and 353 normalized planned events across four cities.
 - Live DWD archive availability: verified with HTTP success for all four configured station files.

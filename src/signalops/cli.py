@@ -257,5 +257,5 @@ def main(argv: list[str] | None = None) -> int:
                 )
             if summary.quality_failures:
                 print("quality warnings: " + ", ".join(summary.quality_failures))
-        return 2 if summary.operational_failures else 0
+        return 2 if summary.operational_failures or summary.quality_failures else 0
     return 1

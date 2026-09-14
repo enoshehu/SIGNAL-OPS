@@ -16,6 +16,14 @@ class SiteAccessibilityTests(unittest.TestCase):
         self.assertIn('label for="city-select"', self.html)
         self.assertIn('aria-label="Switch to night shift"', self.html)
         self.assertIn("<caption", self.html)
+        self.assertIn('id="weather-grid"', self.html)
+        self.assertIn('id="data-refresh"', self.html)
+
+    def test_dashboard_refreshes_and_renders_weather_readings(self) -> None:
+        self.assertIn('cache: "no-store"', self.javascript)
+        self.assertIn("window.setInterval", self.javascript)
+        self.assertIn("renderWeather(data.cities)", self.javascript)
+        self.assertIn("WAITING FOR TIME OVERLAP", Path("site/data/summary.json").read_text())
 
     def test_reduced_motion_is_honoured_in_css_and_javascript(self) -> None:
         self.assertIn("prefers-reduced-motion: reduce", self.css)

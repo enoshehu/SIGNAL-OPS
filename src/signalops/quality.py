@@ -76,18 +76,21 @@ def assess(
         if entity_key:
             scope_key = entity_key.split(":", 1)[1]
             latest = connection.execute(
-                "SELECT MAX(id) FROM artifact_imports "
-                "WHERE source = ? AND scope_key = ? AND stream_key = ?",
+                "SELECT id FROM artifact_imports "
+                "WHERE source = ? AND scope_key = ? AND stream_key = ? "
+                "ORDER BY julianday(retrieved_at) DESC, id DESC LIMIT 1",
                 (definition.adapter, scope_key, definition.stream),
-            ).fetchone()[0]
+            ).fetchone()
         else:
             latest = connection.execute(
-                "SELECT MAX(id) FROM artifact_imports WHERE source = ? AND stream_key = ?",
+                "SELECT id FROM artifact_imports WHERE source = ? AND stream_key = ? "
+                "ORDER BY julianday(retrieved_at) DESC, id DESC LIMIT 1",
                 (definition.adapter, definition.stream),
-            ).fetchone()[0]
+            ).fetchone()
         if latest is None:
             target = entity_key or definition.adapter
             raise ValueError(f"No imported data found for scope: {target}")
+        latest = latest[0]
 
         if definition.adapter == "dwd":
             sql = (

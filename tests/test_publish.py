@@ -10,7 +10,14 @@ class PublishTests(unittest.TestCase):
             [
                 {
                     "city": "essen",
+                    "hour_utc": "2026-09-13T10:00:00+00:00",
                     "paired": 0,
+                    "weather_available": 1,
+                    "rail_available": 0,
+                    "air_temperature_c": 21.5,
+                    "relative_humidity_pct": 71.0,
+                    "precipitation_mm": 0.2,
+                    "wind_speed_m_s": 3.4,
                     "planned_events": 10,
                     "matched_change_events": 8,
                     "cancelled_events": 1,
@@ -20,7 +27,10 @@ class PublishTests(unittest.TestCase):
                 },
                 {
                     "city": "essen",
+                    "hour_utc": "2026-09-14T10:00:00+00:00",
                     "paired": 0,
+                    "weather_available": 0,
+                    "rail_available": 1,
                     "planned_events": 5,
                     "matched_change_events": 5,
                     "cancelled_events": 0,
@@ -35,16 +45,20 @@ class PublishTests(unittest.TestCase):
         essen = next(city for city in payload["cities"] if city["key"] == "essen")
         self.assertEqual(essen["plans"], 15)
         self.assertEqual(essen["meanDelay"], 7.0)
+        self.assertEqual(essen["temperature"], 21.5)
+        self.assertEqual(essen["weatherHours"], 1)
+        self.assertEqual(payload["windowStart"], "2026-09-13T10:00:00+00:00")
+        self.assertEqual(payload["windowEnd"], "2026-09-14T10:00:00+00:00")
         self.assertEqual(payload["pairedHours"], 0)
-        self.assertEqual(payload["status"], "COLLECTING EVIDENCE")
+        self.assertEqual(payload["status"], "WAITING FOR TIME OVERLAP")
 
     def test_payload_marks_real_overlap_available(self) -> None:
         payload = dashboard_payload(
-            [{"city": "koeln", "paired": 1}],
+            [{"city": "koeln", "paired": 1, "weather_available": 1, "rail_available": 1}],
             generated_at=datetime(2026, 9, 14, tzinfo=UTC),
         )
         self.assertEqual(payload["pairedHours"], 1)
-        self.assertEqual(payload["status"], "PAIRED EVIDENCE AVAILABLE")
+        self.assertEqual(payload["status"], "ANALYSIS READY")
 
 
 if __name__ == "__main__":

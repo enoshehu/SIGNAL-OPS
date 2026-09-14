@@ -1,7 +1,11 @@
 {
-  "generatedAt": "2026-09-14T21:04:38.180212+00:00",
-  "status": "COLLECTING EVIDENCE",
+  "generatedAt": "2026-09-14T21:27:26.371159+00:00",
+  "status": "WAITING FOR TIME OVERLAP",
   "pairedHours": 0,
+  "weatherHours": 588,
+  "railHours": 17,
+  "windowStart": "2026-09-07T21:00:00+00:00",
+  "windowEnd": "2026-09-14T21:00:00+00:00",
   "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
   "cities": [
     {
@@ -12,7 +16,13 @@
       "cancelled": 2,
       "delayed": 111,
       "meanDelay": 11.8,
-      "maxDelay": 136.0
+      "maxDelay": 136.0,
+      "weatherHours": 147,
+      "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "temperature": 17.8,
+      "humidity": 98.0,
+      "precipitation": 0.0,
+      "windSpeed": 1.0
     },
     {
       "key": "duisburg",
@@ -22,7 +32,13 @@
       "cancelled": 0,
       "delayed": 77,
       "meanDelay": 18.5,
-      "maxDelay": 138.0
+      "maxDelay": 138.0,
+      "weatherHours": 147,
+      "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "temperature": 16.3,
+      "humidity": 95.0,
+      "precipitation": 0.0,
+      "windSpeed": 0.7
     },
     {
       "key": "essen",
@@ -32,7 +48,13 @@
       "cancelled": 1,
       "delayed": 56,
       "meanDelay": 6.8,
-      "maxDelay": 33.0
+      "maxDelay": 33.0,
+      "weatherHours": 147,
+      "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "temperature": 15.5,
+      "humidity": 97.0,
+      "precipitation": 0.0,
+      "windSpeed": 0.5
     },
     {
       "key": "koeln",
@@ -42,19 +64,25 @@
       "cancelled": 4,
       "delayed": 113,
       "meanDelay": 12.5,
-      "maxDelay": 137.0
+      "maxDelay": 137.0,
+      "weatherHours": 147,
+      "latestWeatherAt": "2026-09-13T23:00:00+00:00",
+      "temperature": 16.6,
+      "humidity": 97.0,
+      "precipitation": 0.0,
+      "windSpeed": 1.3
     }
   ],
   "sources": [
     {
       "name": "DWD Weather",
       "state": "READY",
-      "detail": "Latest archive retained"
+      "detail": "588 city-hours"
     },
     {
       "name": "DB Plans",
       "state": "READY",
-      "detail": "569 planned events"
+      "detail": "569 timetable events"
     },
     {
       "name": "DB Changes",

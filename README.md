@@ -13,8 +13,6 @@ normalizes them in SQLite, runs explicit quality checks, and publishes a static 
 [![Publish dashboard](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/pages.yml/badge.svg)](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/pages.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 
-![SIGNAL OPS dashboard](docs/images/dashboard.png)
-
 ## What it does
 
 - Downloads DWD ZIP archives and DB timetable XML without storing credentials in Git.
@@ -93,7 +91,7 @@ The synchronizer reads secrets from `.env` without executing it, prevents concur
 each raw response and checksum, and isolates failures by city and feed. It enforces the configured
 seven-day rolling retention window in both SQLite and raw artifact storage; future timetable rows
 remain available for live operation. Refresh intervals live in `config/datasets/`: DB changes every
-15 minutes, DB plans hourly, and DWD weather daily. Use
+15 minutes, DB plans hourly, temperature and humidity every six hours, and rain/wind daily. Use
 `signalops sync --dry-run` to inspect what is due or `signalops sync --force` for a complete manual
 refresh.
 

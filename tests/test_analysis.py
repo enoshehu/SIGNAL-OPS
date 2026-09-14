@@ -10,12 +10,27 @@ from signalops.analysis import COLUMNS, export_hourly_csv, hourly_summary
 from signalops.universal import SCHEMA
 
 
+def create_schema(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        "CREATE TABLE artifact_imports (id INTEGER PRIMARY KEY, retrieved_at TEXT NOT NULL)"
+    )
+    connection.executescript(SCHEMA)
+
+
 class AnalysisTests(unittest.TestCase):
     def test_pairs_same_city_hour_and_keeps_unmatched_hours(self) -> None:
         with TemporaryDirectory() as directory:
             database = Path(directory) / "signalops.sqlite"
             with closing(sqlite3.connect(database)) as connection, connection:
-                connection.executescript(SCHEMA)
+                create_schema(connection)
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-14T16:00:00+00:00"),
+                        (2, "2026-09-14T17:00:00+00:00"),
+                        (3, "2026-09-14T18:00:00+00:00"),
+                    ],
+                )
                 connection.executemany(
                     "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
                     [
@@ -105,7 +120,7 @@ class AnalysisTests(unittest.TestCase):
             database = Path(directory) / "signalops.sqlite"
             output = Path(directory) / "out" / "summary.csv"
             with closing(sqlite3.connect(database)) as connection, connection:
-                connection.executescript(SCHEMA)
+                create_schema(connection)
             self.assertEqual(export_hourly_csv(database, output), 0)
             with output.open(encoding="utf-8", newline="") as handle:
                 self.assertEqual(tuple(next(csv.reader(handle))), COLUMNS)
@@ -114,7 +129,15 @@ class AnalysisTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             database = Path(directory) / "signalops.sqlite"
             with closing(sqlite3.connect(database)) as connection, connection:
-                connection.executescript(SCHEMA)
+                create_schema(connection)
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-14T16:00:00+00:00"),
+                        (2, "2026-09-14T17:00:00+00:00"),
+                        (3, "2026-09-14T18:00:00+00:00"),
+                    ],
+                )
                 connection.execute(
                     "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
                     ("db:8000098", "rail_station", "Essen Hbf", json.dumps({"city": "essen"})),
@@ -139,3 +162,75 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(rows[0]["delayed_events"], 1)
         self.assertEqual(rows[0]["average_delay_minutes"], 10.0)
         self.assertEqual(rows[1]["cancelled_events"], 1)
+
+    def test_source_retrieval_time_wins_over_replay_order(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with closing(sqlite3.connect(database)) as connection, connection:
+                create_schema(connection)
+                connection.execute(
+                    "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
+                    ("dwd:01303", "weather_station", "Essen-Bredeney", '{"city":"essen"}'),
+                )
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-15T10:00:00+00:00"),
+                        (2, "2026-09-14T10:00:00+00:00"),
+                    ],
+                )
+                connection.executemany(
+                    "INSERT INTO observations VALUES (?, 'dwd_weather', 'dwd:01303', ?, "
+                    "'2026-09-14T09:00:00+00:00', 'air_temperature', ?, '°C', '{}')",
+                    [("newer-source", 1, 20.0), ("older-replayed-later", 2, 10.0)],
+                )
+
+            rows = hourly_summary(database)
+
+        self.assertEqual(rows[0]["air_temperature_c"], 20.0)
+
+    def test_later_non_time_change_keeps_last_changed_time(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with closing(sqlite3.connect(database)) as connection, connection:
+                create_schema(connection)
+                connection.execute(
+                    "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
+                    ("db:8000098", "rail_station", "Essen Hbf", '{"city":"essen"}'),
+                )
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-14T16:00:00+00:00"),
+                        (2, "2026-09-14T17:00:00+00:00"),
+                        (3, "2026-09-14T18:00:00+00:00"),
+                    ],
+                )
+                connection.executemany(
+                    "INSERT INTO service_events VALUES (?, ?, 'db:8000098', ?, 'stop-1', "
+                    "'departure', ?, ?, ?, '{}')",
+                    [
+                        (
+                            "plan",
+                            "db_timetables",
+                            1,
+                            "2026-09-14T17:20:00+00:00",
+                            None,
+                            "planned",
+                        ),
+                        (
+                            "timed-change",
+                            "db_changes",
+                            2,
+                            None,
+                            "2026-09-14T17:30:00+00:00",
+                            "changed",
+                        ),
+                        ("platform-change", "db_changes", 3, None, None, "changed"),
+                    ],
+                )
+
+            rows = hourly_summary(database)
+
+        self.assertEqual(rows[0]["matched_change_events"], 1)
+        self.assertEqual(rows[0]["average_delay_minutes"], 10.0)

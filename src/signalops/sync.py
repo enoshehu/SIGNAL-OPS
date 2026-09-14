@@ -321,6 +321,14 @@ def synchronize(
             f"{target.label}/{result.rule}" for result in results if result.status == "failure"
         )
 
+    if quality_failures:
+        return SyncSummary(
+            items=tuple(items),
+            normalized_rows=normalized_rows,
+            quality_failures=tuple(quality_failures),
+            retention=retention,
+        )
+
     project_root = config.resolve().parent.parent
     analysis_rows = export_hourly_csv(
         database, settings.data_dir / "processed" / "rhine_ruhr_hourly.csv"

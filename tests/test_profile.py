@@ -12,6 +12,17 @@ class ProfileTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             database = Path(directory) / "profile.sqlite"
             with sqlite3.connect(database) as connection:
+                connection.execute(
+                    "CREATE TABLE artifact_imports (id INTEGER PRIMARY KEY, retrieved_at TEXT)"
+                )
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-14T09:00:00+00:00"),
+                        (2, "2026-09-14T09:30:00+00:00"),
+                        (3, "2026-09-14T10:30:00+00:00"),
+                    ],
+                )
                 connection.executescript(SCHEMA)
                 connection.execute(
                     "INSERT INTO entities VALUES "
@@ -52,6 +63,9 @@ class ProfileTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             database = Path(directory) / "empty.sqlite"
             with sqlite3.connect(database) as connection:
+                connection.execute(
+                    "CREATE TABLE artifact_imports (id INTEGER PRIMARY KEY, retrieved_at TEXT)"
+                )
                 connection.executescript(SCHEMA)
             report = render_profile(database)
         self.assertIn("waiting for a genuine overlapping source window", report)

@@ -85,9 +85,7 @@ function renderCities(rows, allCities) {
 
 function renderRoute(cities, select) {
   const route = document.querySelector("#route-map");
-  route.insertAdjacentHTML(
-    "beforeend",
-    cities
+  route.innerHTML = `<div class="route-track" aria-hidden="true"></div>${cities
       .map(
         (city, index) => `
           <button class="route-stop" type="button" data-city="${escapeHTML(city.key)}" aria-pressed="true" style="--route-color:${cityColours[index % cityColours.length]}">
@@ -95,8 +93,7 @@ function renderRoute(cities, select) {
             <small>${format.format(city.plans)} plans</small>
           </button>`,
       )
-      .join(""),
-  );
+      .join("")}`;
 
   route.querySelectorAll(".route-stop").forEach((button) => {
     button.addEventListener("click", () => {
@@ -108,6 +105,33 @@ function renderRoute(cities, select) {
       });
     });
   });
+}
+
+function reading(value, unit, digits = 1) {
+  return value === null || value === undefined
+    ? "Not available"
+    : `${Number(value).toFixed(digits)} ${unit}`;
+}
+
+function renderWeather(cities) {
+  document.querySelector("#weather-grid").innerHTML = cities
+    .map((city) => {
+      const observed = city.latestWeatherAt ? new Date(city.latestWeatherAt) : null;
+      const observedLabel = observed
+        ? `${observed.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC`
+        : "No retained reading";
+      return `
+        <article class="weather-reading" style="--city-color:${colourFor(city.key, cities)}">
+          <header><h3>${escapeHTML(city.name)}</h3><i aria-hidden="true"></i></header>
+          <dl>
+            <div><dt>Temperature</dt><dd>${escapeHTML(reading(city.temperature, "°C"))}</dd></div>
+            <div><dt>Rain</dt><dd>${escapeHTML(reading(city.precipitation, "mm"))}</dd></div>
+            <div><dt>Wind</dt><dd>${escapeHTML(reading(city.windSpeed, "m/s"))}</dd></div>
+          </dl>
+          <p>${escapeHTML(observedLabel)} · ${format.format(city.weatherHours ?? 0)} retained hours</p>
+        </article>`;
+    })
+    .join("");
 }
 
 function updateRoute(selectedCity) {
@@ -159,12 +183,18 @@ function configureTheme() {
   });
 }
 
-async function start() {
-  configureTheme();
+let dashboardData;
+let selectedCity = "all";
+let secondsUntilRefresh = 60;
 
-  const response = await fetch("data/summary.json");
+async function loadData() {
+  const refreshButton = document.querySelector("#data-refresh");
+  refreshButton.disabled = true;
+  refreshButton.textContent = "Refreshing…";
+  const response = await fetch(`data/summary.json?checked=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error("Dashboard data could not be loaded");
   const data = await response.json();
+  dashboardData = data;
   const generatedAt = new Date(data.generatedAt);
 
   document.querySelector("#generated").textContent =
@@ -178,6 +208,11 @@ async function start() {
   document.querySelector("#project-status").textContent = data.status;
   document.querySelector("#paired-hours").textContent = format.format(data.pairedHours);
   document.querySelector("#notice-text").textContent = data.notice;
+  document.querySelector("#checked").textContent = new Date().toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
   const hasOverlap = Number(data.pairedHours) > 0;
   const joinCore = document.querySelector("#join-core");
@@ -185,30 +220,55 @@ async function start() {
   document.querySelector("#join-symbol").textContent = hasOverlap ? "✓" : "×";
   document.querySelector("#join-state").textContent = hasOverlap
     ? `${format.format(data.pairedHours)} paired hours available`
-    : "Awaiting overlap";
+    : "Waiting for matching hours";
 
   renderSources(data.sources);
+  renderWeather(data.cities);
 
   const select = document.querySelector("#city-select");
+  select.replaceChildren(new Option("All four cities", "all"));
   data.cities.forEach((city) => select.add(new Option(city.name, city.key)));
+  select.value = data.cities.some((city) => city.key === selectedCity) ? selectedCity : "all";
   renderRoute(data.cities, select);
 
   const render = () => {
     const rows =
       select.value === "all"
-        ? data.cities
-        : data.cities.filter((city) => city.key === select.value);
+        ? dashboardData.cities
+        : dashboardData.cities.filter((city) => city.key === select.value);
     renderMetrics(rows);
-    renderCities(rows, data.cities);
+    renderCities(rows, dashboardData.cities);
     updateRoute(select.value);
+    selectedCity = select.value;
   };
 
-  select.addEventListener("change", render);
+  select.onchange = render;
   render();
+  secondsUntilRefresh = 60;
+  refreshButton.disabled = false;
+  refreshButton.textContent = "Refresh now";
 }
 
-start().catch((error) => {
+async function start() {
+  configureTheme();
+  const refreshButton = document.querySelector("#data-refresh");
+  refreshButton.addEventListener("click", () => loadData().catch(showError));
+  await loadData();
+  window.setInterval(() => {
+    secondsUntilRefresh -= 1;
+    if (secondsUntilRefresh <= 0) loadData().catch(showError);
+    else if (!refreshButton.disabled) refreshButton.textContent = `Refresh now · ${secondsUntilRefresh}s`;
+  }, 1000);
+}
+
+function showError(error) {
   document.querySelector("#notice-text").textContent = error.message;
   document.querySelector("#project-status").textContent = "DATA ERROR";
   document.querySelector("#join-state").textContent = "Data unavailable";
-});
+  const refreshButton = document.querySelector("#data-refresh");
+  secondsUntilRefresh = 60;
+  refreshButton.disabled = false;
+  refreshButton.textContent = "Try again";
+}
+
+start().catch(showError);

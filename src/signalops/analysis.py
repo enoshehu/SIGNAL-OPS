@@ -33,10 +33,21 @@ COLUMNS = (
 
 def hourly_summary(database: Path) -> list[dict[str, object]]:
     query = """
-    WITH weather_imports AS (
-      SELECT dataset_key, entity_key, MAX(import_id) AS import_id
-      FROM observations
-      GROUP BY dataset_key, entity_key
+    WITH weather_import_candidates AS (
+      SELECT DISTINCT o.dataset_key, o.entity_key, o.import_id, a.retrieved_at
+      FROM observations o
+      JOIN artifact_imports a ON a.id = o.import_id
+    ),
+    weather_import_ranked AS (
+      SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY dataset_key, entity_key
+        ORDER BY julianday(retrieved_at) DESC, import_id DESC
+      ) AS row_number
+      FROM weather_import_candidates
+    ),
+    weather_imports AS (
+      SELECT dataset_key, entity_key, import_id
+      FROM weather_import_ranked WHERE row_number = 1
     ),
     latest_weather AS (
       SELECT o.* FROM observations o
@@ -65,9 +76,11 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
     plan_ranked AS (
       SELECT s.*,
              ROW_NUMBER() OVER (
-               PARTITION BY entity_key, stop_id, event_type ORDER BY import_id DESC
+               PARTITION BY s.entity_key, s.stop_id, s.event_type
+               ORDER BY julianday(a.retrieved_at) DESC, s.import_id DESC
              ) AS row_number
       FROM service_events s
+      JOIN artifact_imports a ON a.id = s.import_id
       WHERE status = 'planned'
     ),
     plans AS (
@@ -76,17 +89,42 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
     change_ranked AS (
       SELECT s.*,
              ROW_NUMBER() OVER (
-               PARTITION BY entity_key, stop_id, event_type ORDER BY import_id DESC
+               PARTITION BY s.entity_key, s.stop_id, s.event_type
+               ORDER BY julianday(a.retrieved_at) DESC, s.import_id DESC
              ) AS row_number
       FROM service_events s
+      JOIN artifact_imports a ON a.id = s.import_id
       WHERE status IN ('changed', 'cancelled')
     ),
-    changes AS (
+    latest_changes AS (
       SELECT * FROM change_ranked WHERE row_number = 1
+    ),
+    change_time_ranked AS (
+      SELECT s.*,
+             ROW_NUMBER() OVER (
+               PARTITION BY s.entity_key, s.stop_id, s.event_type
+               ORDER BY julianday(a.retrieved_at) DESC, s.import_id DESC
+             ) AS row_number
+      FROM service_events s
+      JOIN artifact_imports a ON a.id = s.import_id
+      WHERE status = 'changed' AND changed_at IS NOT NULL
+    ),
+    latest_change_times AS (
+      SELECT * FROM change_time_ranked WHERE row_number = 1
+    ),
+    changes AS (
+      SELECT c.*,
+             CASE WHEN c.status = 'cancelled' THEN NULL
+                  ELSE COALESCE(c.changed_at, t.changed_at) END AS effective_changed_at
+      FROM latest_changes c
+      LEFT JOIN latest_change_times t
+        ON t.entity_key = c.entity_key
+       AND t.stop_id = c.stop_id
+       AND t.event_type = c.event_type
     ),
     merged_rail AS (
       SELECT p.*, c.event_id AS change_event_id,
-             c.changed_at AS current_at, c.status AS change_status
+             c.effective_changed_at AS current_at, c.status AS change_status
       FROM plans p
       LEFT JOIN changes c
         ON c.entity_key = p.entity_key

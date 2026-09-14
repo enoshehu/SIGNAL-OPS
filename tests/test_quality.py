@@ -239,17 +239,25 @@ class QualityTests(unittest.TestCase):
                 connection.executescript(
                     """
                     CREATE TABLE artifact_imports
-                      (id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT, stream_key TEXT);
+                      (id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT, stream_key TEXT,
+                       retrieved_at TEXT);
                     CREATE TABLE parsed_raw_records
                       (import_id INTEGER, payload_json TEXT);
                     CREATE TABLE observations
                       (observation_id TEXT, dataset_key TEXT, entity_key TEXT, import_id INTEGER,
                        observed_at TEXT, metric TEXT, value REAL);
-                    INSERT INTO artifact_imports VALUES (1, 'dwd', '01303', 'observations');
-                    INSERT INTO artifact_imports VALUES (2, 'dwd', '13670', 'observations');
+                    INSERT INTO artifact_imports VALUES
+                      (1, 'dwd', '01303', 'observations', '2026-09-14T10:00:00+00:00');
+                    INSERT INTO artifact_imports VALUES
+                      (2, 'dwd', '13670', 'observations', '2026-09-14T11:00:00+00:00');
+                    INSERT INTO artifact_imports VALUES
+                      (3, 'dwd', '01303', 'observations', '2026-09-13T10:00:00+00:00');
                     INSERT INTO observations VALUES
                       ('essen-row', 'dwd_weather', 'dwd:01303', 1,
                        '2026-09-14T10:00:00+00:00', 'air_temperature', 18.0);
+                    INSERT INTO observations VALUES
+                      ('older-essen-row', 'dwd_weather', 'dwd:01303', 3,
+                       'invalid', 'air_temperature', 17.0);
                     """
                 )
             result = assess(database, definition, entity_key="dwd:01303")[0]

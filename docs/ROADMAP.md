@@ -108,5 +108,6 @@ belongs in later releases.
 | 4 | Canonical model | Sources, entities, observations, and railway events |
 | 5 | Quality | Persisted rules, affected records, and schema snapshots |
 | 6 | Rhine–Ruhr | Four-city data, plan/change matching, analysis, and Pages preview |
+| 7 | Overlap readiness | Active: rolling collection, fail-closed publication, and paired-data gate |
 
 Detailed sprint records remain under `docs/sprints/` as implementation history.

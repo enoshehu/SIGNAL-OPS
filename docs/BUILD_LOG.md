@@ -452,3 +452,17 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
 - That run produced 52,810 dashboard rows, eight rule-based signals, and eight newly opened local
   incidents. The live dashboard still reports zero paired city-hours because the source windows
   do not overlap. These are run results, not production KPIs.
+
+## Sprint 7 — overlap readiness
+
+- Changed temperature/humidity polling from daily to every six hours. DB plans already retained
+  the next source window, while DWD's latest four archives still ended at 23:00 UTC on 13 September.
+- Kept the release gate based on observed overlap rather than an assumed DWD publication time.
+- Changed analysis and quality snapshot selection from load order to source retrieval time. An old
+  artifact replayed later can no longer replace newer evidence.
+- Kept the last known DB changed time when a later change snapshot supplies only another changed
+  field, such as platform or route information.
+- Made synchronization fail closed: high-severity quality failures preserve raw and canonical
+  evidence but do not replace the public CSV, profile, dashboard, signals, or incidents.
+- Added focused regression tests for source-time recency, change evolution, six-hour DWD polling,
+  and publication blocking.

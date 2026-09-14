@@ -84,10 +84,13 @@ class UniversalModelTests(unittest.TestCase):
                 "dwd_weather",
                 "dwd_precipitation",
                 "dwd_wind",
+                "dwd_wind_gust",
+                "dwd_live_observations",
             },
         )
         self.assertEqual(catalog["db_timetables"].signals[0]["threshold"], 20)
         self.assertEqual(catalog["db_changes"].stream, "changes")
+        self.assertEqual(catalog["dwd_live_observations"].refresh_minutes, 60)
 
     def test_normalizes_dwd_values_with_units_and_utc_time(self) -> None:
         with TemporaryDirectory() as directory:
@@ -136,6 +139,51 @@ class UniversalModelTests(unittest.TestCase):
             self.assertEqual(inserted, 2)
             self.assertEqual(rows[0], ("air_temperature", 18.2, "°C", "2026-09-14T10:00:00+00:00"))
             self.assertEqual(rows[1][0:3], ("relative_humidity", 71.0, "%"))
+
+    def test_repeated_weather_archives_update_one_canonical_metric_hour(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            definition = load_catalog(Path("config/datasets"))["dwd_weather"]
+            with closing(sqlite3.connect(database)) as connection:
+                connection.executescript(
+                    """
+                    CREATE TABLE artifact_imports (
+                      id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT, stream_key TEXT,
+                      artifact_sha256 TEXT, artifact_path TEXT, retrieved_at TEXT, loaded_at TEXT,
+                      record_count INTEGER, UNIQUE(source, scope_key, stream_key, artifact_sha256)
+                    );
+                    CREATE TABLE parsed_raw_records
+                    (import_id INTEGER, external_id TEXT, payload_json TEXT, provenance_json TEXT,
+                     PRIMARY KEY(import_id, external_id));
+                    INSERT INTO artifact_imports VALUES
+                    (1, 'dwd', '01303', 'observations', 'one', '', '', '', 1),
+                    (2, 'dwd', '01303', 'observations', 'two', '', '', '', 1);
+                    """
+                )
+                for import_id, temperature in ((1, 18.2), (2, 18.4)):
+                    connection.execute(
+                        "INSERT INTO parsed_raw_records VALUES (?, ?, ?, '{}')",
+                        (
+                            import_id,
+                            "01303-2026091410",
+                            json.dumps(
+                                {
+                                    "station_id": "01303",
+                                    "observed_at_utc": "2026091410",
+                                    "temperature_c": temperature,
+                                    "relative_humidity_pct": 71.0,
+                                }
+                            ),
+                        ),
+                    )
+                connection.commit()
+
+            normalize(database, definition)
+            with closing(sqlite3.connect(database)) as connection:
+                rows = connection.execute(
+                    "SELECT value FROM observations WHERE metric = 'air_temperature'"
+                ).fetchall()
+            self.assertEqual(rows, [(18.4,)])
 
     def test_rail_rows_are_mapped_to_their_city_station(self) -> None:
         with TemporaryDirectory() as directory:

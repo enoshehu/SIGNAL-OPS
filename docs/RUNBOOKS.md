@@ -13,6 +13,9 @@ Never paste credentials, request headers, or `.env` contents into logs or issues
 
 ## Missing or rejected DB credentials
 
+Public DWD collection remains active when DB credentials are absent. Only the timetable step is
+skipped.
+
 1. Confirm the GitHub repository has `DB_API_CLIENT_ID` and `DB_API_KEY` Actions secrets.
 2. Confirm the workflow passes them only through its step environment.
 3. Rotate a credential if it appeared in any output; redaction is not a substitute for rotation.

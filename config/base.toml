@@ -3,13 +3,16 @@ name = "SIGNAL//OPS"
 environment = "development"
 data_dir = "data/rhine_ruhr"
 default_city = "essen"
-retention_days = 7
+retention_days = 180
+raw_retention_days = 30
 
 [sources.dwd]
 enabled = true
 base_url = "https://opendata.dwd.de/climate_environment/CDC"
 timeout_seconds = 30
 archive_path = "observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_{station_id}_akt.zip"
+poi_base_url = "https://opendata.dwd.de"
+poi_path = "weather/weather_reports/poi/{poi_token}-BEOB.csv"
 
 [sources.db]
 enabled = true
@@ -22,6 +25,7 @@ db_station_name = "Duisburg Hbf"
 db_eva_number = "8000086"
 dwd_station_name = "Duisburg-Baerl"
 dwd_station_id = "13670"
+dwd_poi_id = "H419"
 
 [cities.essen]
 name = "Essen"
@@ -29,6 +33,7 @@ db_station_name = "Essen Hbf"
 db_eva_number = "8000098"
 dwd_station_name = "Essen-Bredeney"
 dwd_station_id = "01303"
+dwd_poi_id = "10410"
 
 [cities.koeln]
 name = "Köln"
@@ -36,6 +41,7 @@ db_station_name = "Köln Hbf"
 db_eva_number = "8000207"
 dwd_station_name = "Köln/Bonn"
 dwd_station_id = "02667"
+dwd_poi_id = "10513"
 
 [cities.duesseldorf]
 name = "Düsseldorf"
@@ -43,3 +49,4 @@ db_station_name = "Düsseldorf Hbf"
 db_eva_number = "8000085"
 dwd_station_name = "Düsseldorf"
 dwd_station_id = "01078"
+dwd_poi_id = "10400"

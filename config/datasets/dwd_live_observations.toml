@@ -1,0 +1,80 @@
+[dataset]
+key = "dwd_live_observations"
+name = "DWD current hourly observations"
+adapter = "dwd"
+stream = "live_observations"
+entity_type = "weather_station"
+refresh_minutes = 60
+
+[source]
+key = "dwd_poi"
+name = "DWD Point of Interest observations"
+provider = "Deutscher Wetterdienst"
+license = "CC BY 4.0"
+url = "https://opendata.dwd.de/weather/weather_reports/poi"
+delivery = "poi"
+
+[[entities]]
+key = "dwd:01078"
+name = "Düsseldorf"
+city = "duesseldorf"
+poi_id = "10400"
+latitude = 51.2960
+longitude = 6.7686
+
+[[entities]]
+key = "dwd:13670"
+name = "Duisburg-Baerl"
+city = "duisburg"
+poi_id = "H419"
+latitude = 51.5088
+longitude = 6.7018
+
+[[entities]]
+key = "dwd:01303"
+name = "Essen-Bredeney"
+city = "essen"
+poi_id = "10410"
+latitude = 51.4041
+longitude = 6.9677
+
+[[entities]]
+key = "dwd:02667"
+name = "Köln/Bonn"
+city = "koeln"
+poi_id = "10513"
+latitude = 50.8645
+longitude = 7.1575
+
+[[quality]]
+key = "valid_timestamp"
+severity = "high"
+
+[[quality]]
+key = "humidity_range"
+severity = "medium"
+
+[[quality]]
+key = "wind_range"
+severity = "high"
+
+[[quality]]
+key = "unique_observation"
+severity = "high"
+
+[[quality]]
+key = "entity_integrity"
+severity = "high"
+
+[[quality]]
+key = "hourly_continuity"
+severity = "medium"
+
+[[quality]]
+key = "freshness"
+severity = "medium"
+max_age_minutes = 180
+
+[[quality]]
+key = "schema_drift"
+severity = "high"

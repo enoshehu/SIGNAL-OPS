@@ -10,10 +10,16 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter, RawFileStore
+from signalops.adapters import (
+    DeutscheBahnTimetablesAdapter,
+    DWDOpenDataAdapter,
+    DWDPOIAdapter,
+    RawFileStore,
+)
 from signalops.analysis import export_hourly_csv
 from signalops.catalog import load_catalog
 from signalops.config import ConfigurationError, load_settings
+from signalops.history import backfill_weather
 from signalops.operations import run_operational_cycle
 from signalops.pipeline import IngestionPipeline
 from signalops.quality import assess
@@ -37,6 +43,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ingest.add_argument(
         "--at", help="DB plan hour in ISO format, for example 2026-09-14T10:00:00+00:00"
+    )
+    ingest.add_argument(
+        "--dwd-feed",
+        choices=("poi", "archive"),
+        default="poi",
+        help="DWD feed; POI provides current observations and archive provides CDC history",
+    )
+    ingest.add_argument(
+        "--dwd-product",
+        choices=("air_temperature", "precipitation", "wind", "extreme_wind"),
+        default="air_temperature",
+        help="CDC archive product when --dwd-feed=archive",
     )
     ingest.add_argument(
         "--db-feed",
@@ -72,6 +90,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync.add_argument("--dataset", action="append", default=[], help="limit to one dataset key")
     sync.add_argument("--city", action="append", default=[], help="limit to one city key")
+    backfill = subparsers.add_parser(
+        "backfill-weather", help="load the retained historical DWD archive window"
+    )
+    backfill.add_argument("--config", type=Path, default=default_config)
+    backfill.add_argument("--days", type=int, default=180)
+    backfill.add_argument("--city", action="append", default=[], help="limit to one city key")
     return parser
 
 
@@ -83,13 +107,15 @@ def main(argv: list[str] | None = None) -> int:
         except ConfigurationError as exc:
             print(f"Configuration error: {exc}")
             return 2
-        dwd = DWDOpenDataAdapter(settings.dwd)
+        dwd_archive = DWDOpenDataAdapter(settings.dwd)
+        dwd_live = DWDPOIAdapter(settings.dwd)
         db = DeutscheBahnTimetablesAdapter(settings.db)
         print(f"{settings.name} [{settings.environment}]")
         print(f"data directory: {settings.data_dir}")
         print("cities: " + ", ".join(city.name for city in settings.cities))
         print(f"default city: {settings.city().name}")
-        print(f"DWD adapter: {'configured' if dwd.ready else 'disabled'}")
+        print(f"DWD live adapter: {'configured' if dwd_live.ready else 'disabled'}")
+        print(f"DWD archive adapter: {'configured' if dwd_archive.ready else 'disabled'}")
         if not settings.db.enabled:
             db_status = "disabled"
         else:
@@ -120,14 +146,18 @@ def main(argv: list[str] | None = None) -> int:
         except ConfigurationError as exc:
             print(f"Configuration error: {exc}")
             return 2
-        dwd_settings = replace(settings.dwd, station_id=city.dwd_station_id)
+        dwd_settings = replace(settings.dwd, station_id=city.dwd_station_id, poi_id=city.dwd_poi_id)
         db_settings = replace(settings.db, eva_number=city.db_eva_number)
         source_settings = dwd_settings if args.source == "dwd" else db_settings
         if not source_settings.enabled:
             print(f"Source is disabled in configuration: {args.source}")
             return 2
         adapter = (
-            DWDOpenDataAdapter(dwd_settings)
+            (
+                DWDPOIAdapter(dwd_settings)
+                if args.dwd_feed == "poi"
+                else DWDOpenDataAdapter(dwd_settings, product=args.dwd_product)
+            )
             if args.source == "dwd"
             else DeutscheBahnTimetablesAdapter(
                 db_settings, requested_at=requested_at, feed=args.db_feed
@@ -153,7 +183,16 @@ def main(argv: list[str] | None = None) -> int:
             artifact = RawFileStore(settings.data_dir).load(args.path)
             if artifact.source == "dwd":
                 station_id = str(artifact.provenance.get("station_id", settings.dwd.station_id))
-                adapter = DWDOpenDataAdapter(replace(settings.dwd, station_id=station_id))
+                if artifact.provenance.get("delivery") == "poi":
+                    poi_id = str(artifact.provenance.get("poi_id", settings.dwd.poi_id))
+                    adapter = DWDPOIAdapter(
+                        replace(settings.dwd, station_id=station_id, poi_id=poi_id)
+                    )
+                else:
+                    product = str(artifact.provenance.get("product", "air_temperature"))
+                    adapter = DWDOpenDataAdapter(
+                        replace(settings.dwd, station_id=station_id), product=product
+                    )
             elif artifact.source == "db":
                 station_eva = str(artifact.provenance.get("station_eva", settings.db.eva_number))
                 adapter = DeutscheBahnTimetablesAdapter(
@@ -190,7 +229,8 @@ def main(argv: list[str] | None = None) -> int:
             settings = load_settings(args.config)
             definition = load_catalog(args.config.resolve().parent / "datasets")[args.dataset]
             city = settings.city(args.city)
-            scope = city.dwd_station_id if definition.adapter == "dwd" else city.db_eva_number
+            entity = next(item for item in definition.entities if item.get("city") == city.key)
+            scope = str(entity["key"]).split(":", 1)[1]
             results = assess(
                 settings.data_dir / "signalops.sqlite",
                 definition,
@@ -250,6 +290,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"new incidents opened: {summary.incidents_opened}")
             if summary.retention:
                 print(f"retention cutoff: {summary.retention.cutoff.isoformat()}")
+                print(f"raw retention cutoff: {summary.retention.raw_cutoff.isoformat()}")
                 print(
                     "retention removed: "
                     f"{summary.retention.database_rows_deleted} database rows, "
@@ -257,5 +298,18 @@ def main(argv: list[str] | None = None) -> int:
                 )
             if summary.quality_failures:
                 print("quality warnings: " + ", ".join(summary.quality_failures))
+        return 2 if summary.operational_failures or summary.quality_failures else 0
+    if args.command == "backfill-weather":
+        try:
+            summary, report, coverage = backfill_weather(
+                args.config, days=args.days, cities=tuple(args.city)
+            )
+        except (OSError, RuntimeError, ValueError, sqlite3.Error) as exc:
+            print(f"Historical weather backfill failed: {exc}")
+            return 2
+        for item in summary.items:
+            print(f"{item.status}: {item.label} — {item.detail}")
+        print(f"coverage report: {report}")
+        print(f"city-metric coverage rows: {len(coverage)}")
         return 2 if summary.operational_failures or summary.quality_failures else 0
     return 1

@@ -125,8 +125,10 @@ function renderWeather(cities) {
           <header><h3>${escapeHTML(city.name)}</h3><i aria-hidden="true"></i></header>
           <dl>
             <div><dt>Temperature</dt><dd>${escapeHTML(reading(city.temperature, "°C"))}</dd></div>
+            <div><dt>Humidity</dt><dd>${escapeHTML(reading(city.humidity, "%"))}</dd></div>
             <div><dt>Rain</dt><dd>${escapeHTML(reading(city.precipitation, "mm"))}</dd></div>
             <div><dt>Wind</dt><dd>${escapeHTML(reading(city.windSpeed, "m/s"))}</dd></div>
+            <div><dt>Gust</dt><dd>${escapeHTML(reading(city.windGust, "m/s"))}</dd></div>
           </dl>
           <p>${escapeHTML(observedLabel)} · ${format.format(city.weatherHours ?? 0)} retained hours</p>
         </article>`;

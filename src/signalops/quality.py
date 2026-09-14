@@ -137,6 +137,7 @@ def assess(
                     if row[4] is not None
                     and (
                         (row[3] == "wind_speed" and not 0 <= row[4] <= 100)
+                        or (row[3] == "wind_gust" and not 0 <= row[4] <= 150)
                         or (row[3] == "wind_direction" and not 0 <= row[4] <= 360)
                     )
                 )

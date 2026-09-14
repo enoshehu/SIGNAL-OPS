@@ -12,6 +12,7 @@ from pathlib import Path
 @dataclass(frozen=True, slots=True)
 class RetentionResult:
     cutoff: datetime
+    raw_cutoff: datetime
     database_rows_deleted: int
     raw_artifacts_deleted: int
 
@@ -171,9 +172,15 @@ def prune_raw_files(data_dir: Path, cutoff: datetime) -> int:
     return deleted
 
 
-def apply_retention(database: Path, data_dir: Path, cutoff: datetime) -> RetentionResult:
+def apply_retention(
+    database: Path, data_dir: Path, cutoff: datetime, *, raw_cutoff: datetime | None = None
+) -> RetentionResult:
+    raw_boundary = raw_cutoff or cutoff
+    if raw_boundary.tzinfo is None:
+        raise ValueError("Raw retention cutoff must be timezone-aware")
     return RetentionResult(
         cutoff=cutoff.astimezone(UTC),
+        raw_cutoff=raw_boundary.astimezone(UTC),
         database_rows_deleted=prune_database(database, cutoff),
-        raw_artifacts_deleted=prune_raw_files(data_dir, cutoff),
+        raw_artifacts_deleted=prune_raw_files(data_dir, raw_boundary),
     )

@@ -32,7 +32,7 @@
   <main id="overview">
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy reveal">
-        <p class="eyebrow"><span class="status-dot"></span>Seven-day rolling monitor / four main stations</p>
+        <p class="eyebrow"><span class="status-dot"></span>180-day rolling monitor / four main stations</p>
         <h1 id="page-title"><span>Rail performance.</span><br><em>Weather context.</em></h1>
         <p class="lede">Track delays and cancellations at Düsseldorf, Duisburg, Essen and Köln. When rail and weather records cover the same UTC hour, the monitor compares them automatically.</p>
         <div class="hero-actions">
@@ -95,7 +95,7 @@
         <section class="table-panel" aria-labelledby="detail-title">
           <div class="panel-heading">
             <div><span class="panel-index">B</span><h3 id="detail-title">City detail</h3></div>
-            <span>Current seven-day window</span>
+            <span>Current 180-day window</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -122,7 +122,7 @@
           <p>DWD hourly observations</p>
           <h3>Weather records</h3>
           <span class="system-state"><i></i> Download active</span>
-          <small>Temperature · precipitation · wind</small>
+          <small>Temperature · humidity · precipitation · wind · gusts</small>
         </article>
 
         <div class="join-core" id="join-core">
@@ -151,7 +151,7 @@
       </div>
       <div class="method-steps reveal">
         <article><span>01</span><h3>Download</h3><p>GitHub Actions fetches DWD weather and DB timetable changes every 15 minutes.</p></article>
-        <article><span>02</span><h3>Keep 7 days</h3><p>Records and original downloads older than seven days are removed automatically.</p></article>
+        <article><span>02</span><h3>Retain history</h3><p>Analysis keeps 180 days. Original downloads remain available for 30 days for replay and recovery.</p></article>
         <article><span>03</span><h3>Match</h3><p>Plans and changes match by station, stop ID and event type. Weather matches by city and UTC hour.</p></article>
         <article><span>04</span><h3>Report</h3><p>Missing and unmatched records stay visible and are never counted as zero.</p></article>
       </div>

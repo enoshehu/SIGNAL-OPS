@@ -18,6 +18,96 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
 
 class AnalysisTests(unittest.TestCase):
+    def test_live_import_extends_archive_without_hiding_history(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with closing(sqlite3.connect(database)) as connection, connection:
+                create_schema(connection)
+                connection.execute(
+                    "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
+                    ("dwd:01303", "weather_station", "Essen-Bredeney", '{"city":"essen"}'),
+                )
+                connection.executemany(
+                    "INSERT INTO artifact_imports VALUES (?, ?)",
+                    [
+                        (1, "2026-09-14T10:00:00+00:00"),
+                        (2, "2026-09-14T11:00:00+00:00"),
+                    ],
+                )
+                connection.executemany(
+                    "INSERT INTO observations VALUES (?, ?, 'dwd:01303', ?, ?, ?, ?, ?, '{}')",
+                    [
+                        (
+                            "archive-08",
+                            "dwd_weather",
+                            1,
+                            "2026-09-14T08:00:00+00:00",
+                            "air_temperature",
+                            12.0,
+                            "°C",
+                        ),
+                        (
+                            "archive-09",
+                            "dwd_weather",
+                            1,
+                            "2026-09-14T09:00:00+00:00",
+                            "air_temperature",
+                            13.0,
+                            "°C",
+                        ),
+                        (
+                            "live-09",
+                            "dwd_live_observations",
+                            2,
+                            "2026-09-14T09:00:00+00:00",
+                            "air_temperature",
+                            14.0,
+                            "°C",
+                        ),
+                        (
+                            "live-10",
+                            "dwd_live_observations",
+                            2,
+                            "2026-09-14T10:00:00+00:00",
+                            "air_temperature",
+                            15.0,
+                            "°C",
+                        ),
+                        (
+                            "archive-gust-10",
+                            "dwd_wind_gust",
+                            1,
+                            "2026-09-14T10:00:00+00:00",
+                            "wind_gust",
+                            None,
+                            "m/s",
+                        ),
+                        (
+                            "gust-10",
+                            "dwd_live_observations",
+                            2,
+                            "2026-09-14T10:00:00+00:00",
+                            "wind_gust",
+                            9.5,
+                            "m/s",
+                        ),
+                    ],
+                )
+
+            rows = hourly_summary(database)
+
+        self.assertEqual(
+            [row["hour_utc"] for row in rows],
+            [
+                "2026-09-14T08:00:00+00:00",
+                "2026-09-14T09:00:00+00:00",
+                "2026-09-14T10:00:00+00:00",
+            ],
+        )
+        self.assertEqual(rows[1]["air_temperature_c"], 13.0)
+        self.assertEqual(rows[2]["air_temperature_c"], 15.0)
+        self.assertEqual(rows[2]["wind_gust_m_s"], 9.5)
+
     def test_pairs_same_city_hour_and_keeps_unmatched_hours(self) -> None:
         with TemporaryDirectory() as directory:
             database = Path(directory) / "signalops.sqlite"

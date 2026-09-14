@@ -67,6 +67,7 @@ def dashboard_payload(
                 "humidity": latest_weather.get("relative_humidity_pct") if latest_weather else None,
                 "precipitation": latest_weather.get("precipitation_mm") if latest_weather else None,
                 "windSpeed": latest_weather.get("wind_speed_m_s") if latest_weather else None,
+                "windGust": latest_weather.get("wind_gust_m_s") if latest_weather else None,
             }
         )
 

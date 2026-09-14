@@ -36,6 +36,7 @@ class ProfileTests(unittest.TestCase):
                     ("temp", "air_temperature", 31.0, "°C"),
                     ("rain", "precipitation", 2.0, "mm"),
                     ("wind", "wind_speed", 11.0, "m/s"),
+                    ("gust", "wind_gust", 16.0, "m/s"),
                 ]
                 connection.executemany(
                     "INSERT INTO observations VALUES (?, 'weather', 'dwd:one', 1, "
@@ -57,6 +58,7 @@ class ProfileTests(unittest.TestCase):
 
         self.assertEqual(summaries["rain (≥1 mm/h)"].city_hours, 1)
         self.assertEqual(summaries["strong wind (≥10 m/s)"].delayed_events, 1)
+        self.assertEqual(summaries["strong gust (≥15 m/s)"].delayed_events, 1)
         self.assertIn("do not establish", report)
 
     def test_empty_profile_explicitly_waits_for_real_overlap(self) -> None:

@@ -1,6 +1,6 @@
 # SIGNAL//OPS
 
-SIGNAL//OPS combines DWD temperature, humidity, precipitation and wind observations with Deutsche
+SIGNAL//OPS combines DWD temperature, humidity, precipitation, wind and gust observations with Deutsche
 Bahn timetable updates for Duisburg, Essen, Düsseldorf, and Köln. It preserves raw source files,
 normalizes them in SQLite, runs explicit quality checks, and publishes a static dashboard.
 
@@ -89,17 +89,25 @@ signalops sync
 
 The synchronizer reads secrets from `.env` without executing it, prevents concurrent runs, keeps
 each raw response and checksum, and isolates failures by city and feed. It enforces the configured
-seven-day rolling retention window in both SQLite and raw artifact storage; future timetable rows
-remain available for live operation. Refresh intervals live in `config/datasets/`: DB changes every
-15 minutes, DB plans hourly, temperature and humidity every six hours, and rain/wind daily. Use
+180-day analytical window and 30-day raw-artifact window; future timetable rows remain available
+for live operation. Refresh intervals live in `config/datasets/`: DB changes every
+15 minutes, DB plans hourly, live DWD observations hourly, temperature and humidity every six
+hours, and CDC rain/wind/gust archives daily. Use
 `signalops sync --dry-run` to inspect what is due or `signalops sync --force` for a complete manual
 refresh.
 
-GitHub Actions runs the same command every 15 minutes and publishes the latest bounded database
-and raw files as the replaceable `live-data` release asset. This avoids committing a frequently
-changing SQLite binary or retaining old database versions in Git history. Configure
-`DB_API_CLIENT_ID` and `DB_API_KEY` as repository Actions secrets; the dashboard deployment and
-rolling data update then share one serialized workflow. The current archive is available from the
+Load the official DWD history immediately with `signalops backfill-weather --days 180`. DWD's
+rolling archives cover the complete period. DB does not publish an equivalent archive of historical
+actual arrivals and departures through the Timetables API, so rail history starts when this collector
+begins running and grows forward to 180 days.
+
+GitHub Actions checks due feeds every 15 minutes and publishes the latest bounded database and raw
+files as the replaceable `live-data` release asset. Public DWD collection runs without secrets;
+the configured hourly and daily dataset intervals prevent redundant downloads. Configure
+`DB_API_CLIENT_ID` and `DB_API_KEY` as repository Actions secrets to add timetable collection. If
+they are absent, the workflow still refreshes DWD data. This avoids committing a frequently
+changing SQLite binary or retaining old database versions in Git history. The dashboard deployment
+and rolling data update share one serialized workflow. The current archive is available from the
 [`live-data` release](https://github.com/enoshehu/SIGNAL-OPS/releases/tag/live-data) after the first
 successful scheduled run.
 
@@ -108,6 +116,7 @@ successful scheduled run.
 ```bash
 signalops status
 signalops sync
+signalops backfill-weather --days 180
 signalops ingest --source dwd --city essen
 signalops ingest --source db --city essen --db-feed plan
 signalops normalize --dataset dwd_weather

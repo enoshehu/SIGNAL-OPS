@@ -1,0 +1,67 @@
+[dataset]
+key = "dwd_wind_gust"
+name = "DWD hourly maximum wind gust"
+adapter = "dwd"
+stream = "extreme_wind"
+entity_type = "weather_station"
+refresh_minutes = 1440
+
+[source]
+key = "dwd"
+name = "DWD Climate Data Center"
+provider = "Deutscher Wetterdienst"
+license = "CC BY 4.0"
+url = "https://opendata.dwd.de/climate_environment/CDC"
+product = "extreme_wind"
+archive_path = "observations_germany/climate/hourly/extreme_wind/recent/stundenwerte_FX_{station_id}_akt.zip"
+
+[[entities]]
+key = "dwd:01078"
+name = "Düsseldorf"
+city = "duesseldorf"
+
+[[entities]]
+key = "dwd:15190"
+name = "Xanten (Duisburg wind proxy, 26.5 km)"
+city = "duisburg"
+role = "Nearest independent active hourly-wind station"
+distance_to_city_weather_station_km = 26.5
+
+[[entities]]
+key = "dwd:01303"
+name = "Essen-Bredeney"
+city = "essen"
+
+[[entities]]
+key = "dwd:02667"
+name = "Köln/Bonn"
+city = "koeln"
+
+[[quality]]
+key = "valid_timestamp"
+severity = "high"
+
+[[quality]]
+key = "wind_range"
+severity = "high"
+
+[[quality]]
+key = "value_present"
+severity = "medium"
+
+[[quality]]
+key = "entity_integrity"
+severity = "high"
+
+[[quality]]
+key = "hourly_continuity"
+severity = "medium"
+
+[[quality]]
+key = "freshness"
+severity = "medium"
+max_age_minutes = 2880
+
+[[quality]]
+key = "schema_drift"
+severity = "high"

@@ -10,7 +10,7 @@
 6. Open the generated paired-window profile and point to sample sizes, missingness and limitations.
 7. Run the controlled failure drill: corrupt input is retained, rejected before import, and recovered
    through a verified replay.
-8. Finish with the GitHub workflow: 15-minute scheduling, seven-day retention, replacement release
+8. Finish with the GitHub workflow: 15-minute scheduling, 180-day analytics, 30-day raw retention, replacement release
    asset, Pages deployment and duplicate-safe failure issue.
 
 Do not claim that weather causes disruption. Until paired evidence exists, explicitly say that the

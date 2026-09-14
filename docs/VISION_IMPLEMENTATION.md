@@ -9,7 +9,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | DB timetable change ingestion | Complete | Incremental 15-minute full-change collection, separated from plans |
 | Config-driven dataset onboarding | Partial | Catalog and entity scopes are configurable; each new provider still needs code and tests |
 | Source, dataset and entity catalog | Complete | Universal SQLite tables |
-| Weather observations | Complete for v1 | Temperature, humidity, rainfall, wind speed, and wind direction with seven-day live retention |
+| Weather observations | Complete for v1 | Temperature, humidity, rainfall, wind speed/direction, and gusts with 180-day analytical retention |
 | Rhine–Ruhr city profiles | Complete | Selectable DWD/DB profiles for Duisburg, Essen, Düsseldorf, and Köln |
 | Railway service events | Complete for plan/change snapshots | Rolling plans and changes normalized across four cities |
 | City-scoped quality | Complete | Latest import and checks resolve by station scope instead of global source order |
@@ -29,7 +29,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |
-| Scheduled collection | Complete for v1 | GitHub live DWD/DB run, rolling release asset, retention, failure issue, and Pages deployment verified |
+| Scheduled collection | Complete for v1 | GitHub live DWD/DB run, 180-day analytical retention, 30-day raw retention, failure issue, and Pages deployment verified |
 | SMARD, UBA and Destatis missions | Planned | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

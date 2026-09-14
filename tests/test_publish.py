@@ -18,6 +18,7 @@ class PublishTests(unittest.TestCase):
                     "relative_humidity_pct": 71.0,
                     "precipitation_mm": 0.2,
                     "wind_speed_m_s": 3.4,
+                    "wind_gust_m_s": 8.2,
                     "planned_events": 10,
                     "matched_change_events": 8,
                     "cancelled_events": 1,
@@ -47,6 +48,7 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(essen["meanDelay"], 7.0)
         self.assertEqual(essen["temperature"], 21.5)
         self.assertEqual(essen["weatherHours"], 1)
+        self.assertEqual(essen["windGust"], 8.2)
         self.assertEqual(payload["windowStart"], "2026-09-13T10:00:00+00:00")
         self.assertEqual(payload["windowEnd"], "2026-09-14T10:00:00+00:00")
         self.assertEqual(payload["pairedHours"], 0)

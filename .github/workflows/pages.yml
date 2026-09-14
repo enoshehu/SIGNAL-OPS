@@ -45,7 +45,7 @@ jobs:
       - name: Install
         run: python -m pip install .
       - name: Restore rolling live database
-        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -55,28 +55,42 @@ jobs:
           if test -f signalops-live-data.tar.gz; then
             tar -xzf signalops-live-data.tar.gz
           fi
-      - name: Collect due source data and enforce seven-day retention
+      - name: Collect due public DWD data
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true'
+        env:
+          SIGNALOPS_DATA_DIR: runtime
+        run: >-
+          signalops sync --config config/base.toml --env-file /dev/null
+          --dataset dwd_live_observations
+          --dataset dwd_weather
+          --dataset dwd_precipitation
+          --dataset dwd_wind
+          --dataset dwd_wind_gust
+      - name: Collect due DB timetable data
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
         env:
           DB_API_CLIENT_ID: ${{ secrets.DB_API_CLIENT_ID }}
           DB_API_KEY: ${{ secrets.DB_API_KEY }}
           SIGNALOPS_DATA_DIR: runtime
-        run: signalops sync --config config/base.toml --env-file /dev/null
+        run: >-
+          signalops sync --config config/base.toml --env-file /dev/null
+          --dataset db_timetables
+          --dataset db_changes
       - name: Reconcile live dashboard with rolling database
-        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true'
         run: PYTHONPATH=src python scripts/release_check.py --database runtime/signalops.sqlite
       - name: Publish rolling live database
-        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && success()
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tar -czf signalops-live-data.tar.gz runtime
           gh release view live-data >/dev/null 2>&1 || \
-            gh release create live-data --title "Rolling seven-day live data" \
-              --notes "Automatically maintained SIGNAL//OPS operational data." --prerelease
+            gh release create live-data --title "Rolling live data" \
+              --notes "180-day analytics with 30 days of replayable raw source data." --prerelease
           gh release upload live-data signalops-live-data.tar.gz --clobber
       - name: Rebuild versioned evidence
-        if: env.SIGNALOPS_COLLECT_LIVE != 'true' || env.SIGNALOPS_DB_READY != 'true'
+        if: env.SIGNALOPS_COLLECT_LIVE != 'true'
         run: |
           PYTHONPATH=src python scripts/rebuild_evidence.py
           PYTHONPATH=src python scripts/build_dashboard.py \

@@ -22,7 +22,8 @@
       "temperature": 17.8,
       "humidity": 98.0,
       "precipitation": null,
-      "windSpeed": null
+      "windSpeed": null,
+      "windGust": null
     },
     {
       "key": "duisburg",
@@ -38,7 +39,8 @@
       "temperature": 16.3,
       "humidity": 95.0,
       "precipitation": null,
-      "windSpeed": null
+      "windSpeed": null,
+      "windGust": null
     },
     {
       "key": "essen",
@@ -54,7 +56,8 @@
       "temperature": 15.5,
       "humidity": 97.0,
       "precipitation": null,
-      "windSpeed": null
+      "windSpeed": null,
+      "windGust": null
     },
     {
       "key": "koeln",
@@ -70,7 +73,8 @@
       "temperature": 16.6,
       "humidity": 97.0,
       "precipitation": null,
-      "windSpeed": null
+      "windSpeed": null,
+      "windGust": null
     }
   ],
   "sources": [

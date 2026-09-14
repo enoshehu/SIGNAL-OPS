@@ -31,7 +31,7 @@ message broker, warehouse, or separate API for the current workload.
 | `storage.py` | Preserve imports and parsed records with replay identity |
 | `universal.py` | Create canonical weather observations and railway events |
 | `quality.py` | Run configured checks and store their evidence |
-| `retention.py` | Enforce the rolling seven-day operational window |
+| `retention.py` | Enforce separate 180-day analytical and 30-day raw-data windows |
 | `analysis.py` | Match plan/change events and build city-hour rows |
 | `profile.py` | Produce sample-size and weather-condition comparisons |
 | `operations.py` | Create four rule-based signals and local incidents |
@@ -66,11 +66,11 @@ GitHub Pages serves static HTML, CSS, JavaScript, and generated JSON. A single w
 both deployment modes:
 
 - Push or manual run: rebuild the checked-in evidence and publish it.
-- Schedule: collect a new source slice using GitHub Secrets, run quality checks, and publish only
-  when no rule returns `failure`.
+- Schedule: collect public DWD data without credentials, add DB data when GitHub Secrets are
+  configured, run quality checks, and publish only when no rule returns `failure`.
 
 The scheduled workflow runs every 15 minutes. It restores one replaceable `live-data` GitHub
-Release asset, downloads only feeds that are due, enforces seven-day retention, rebuilds the site,
+Release asset, downloads only feeds that are due, enforces bounded analytical/raw retention, rebuilds the site,
 then replaces the asset only after success. This avoids permanent binary database history and
 unbounded Actions-cache generations. Failures open or update one duplicate-safe GitHub issue.
 

@@ -62,7 +62,8 @@ def normalize(database: Path, definition: DatasetDefinition) -> int:
             """SELECT r.import_id, r.external_id, r.payload_json
                FROM parsed_raw_records r
                JOIN artifact_imports a ON a.id = r.import_id
-               WHERE a.source = ? AND a.stream_key = ?""",
+               WHERE a.source = ? AND a.stream_key = ?
+               ORDER BY julianday(a.retrieved_at), r.import_id""",
             (definition.adapter, definition.stream),
         ).fetchall()
         try:
@@ -75,13 +76,20 @@ def normalize(database: Path, definition: DatasetDefinition) -> int:
 def _register(connection: sqlite3.Connection, definition: DatasetDefinition) -> None:
     source = definition.source
     connection.execute(
-        "INSERT OR REPLACE INTO sources VALUES (?, ?, ?, ?, ?)",
+        """INSERT INTO sources VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(source_key) DO UPDATE SET
+             name = excluded.name, provider = excluded.provider,
+             license = excluded.license, source_url = excluded.source_url""",
         (source["key"], source["name"], source["provider"], source["license"], source["url"]),
     )
     connection.execute(
-        """INSERT OR REPLACE INTO datasets
+        """INSERT INTO datasets
            (dataset_key, source_key, name, adapter, stream_key, entity_type, refresh_minutes)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(dataset_key) DO UPDATE SET
+             source_key = excluded.source_key, name = excluded.name,
+             adapter = excluded.adapter, stream_key = excluded.stream_key,
+             entity_type = excluded.entity_type, refresh_minutes = excluded.refresh_minutes""",
         (
             definition.key,
             source["key"],
@@ -99,7 +107,12 @@ def _register(connection: sqlite3.Connection, definition: DatasetDefinition) -> 
             if key not in {"key", "name", "latitude", "longitude"}
         }
         connection.execute(
-            "INSERT OR REPLACE INTO entities VALUES (?, ?, ?, ?, ?, ?)",
+            """INSERT INTO entities VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(entity_key) DO UPDATE SET
+                 entity_type = excluded.entity_type, name = excluded.name,
+                 latitude = COALESCE(excluded.latitude, entities.latitude),
+                 longitude = COALESCE(excluded.longitude, entities.longitude),
+                 attributes_json = excluded.attributes_json""",
             (
                 entity["key"],
                 definition.entity_type,
@@ -132,15 +145,31 @@ def _weather(
                 ("wind_speed", "m/s", "wind_speed_m_s"),
                 ("wind_direction", "°", "wind_direction_deg"),
             ),
+            "dwd_wind_gust": (("wind_gust", "m/s", "wind_gust_m_s"),),
+            "dwd_live_observations": (
+                ("air_temperature", "°C", "temperature_c"),
+                ("relative_humidity", "%", "relative_humidity_pct"),
+                ("precipitation", "mm", "precipitation_mm"),
+                ("wind_speed", "m/s", "wind_speed_m_s"),
+                ("wind_direction", "°", "wind_direction_deg"),
+                ("wind_gust", "m/s", "wind_gust_m_s"),
+            ),
         }
         try:
             dataset_measurements = measurements[definition.key]
         except KeyError as exc:
             raise ValueError(f"No weather metric mapping for dataset: {definition.key}") from exc
         for metric, unit, field in dataset_measurements:
-            observation_id = f"{definition.key}:{import_id}:{external_id}:{metric}"
+            observation_id = f"{definition.key}:{entity_key}:{observed.isoformat()}:{metric}"
             cursor = connection.execute(
-                "INSERT OR IGNORE INTO observations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                """
+                INSERT INTO observations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(observation_id) DO UPDATE SET
+                  import_id = excluded.import_id,
+                  value = excluded.value,
+                  unit = excluded.unit,
+                  source_payload_json = excluded.source_payload_json
+                """,
                 (
                     observation_id,
                     definition.key,
@@ -178,7 +207,17 @@ def _rail(connection: sqlite3.Connection, definition: DatasetDefinition, rows: l
             else:
                 status = "planned"
                 changed = None
-            event_id = f"{definition.key}:{import_id}:{stop_id}:{event_type}"
+            event_id = ":".join(
+                (
+                    definition.key,
+                    entity_key,
+                    stop_id,
+                    event_type,
+                    status,
+                    planned or "",
+                    changed or "",
+                )
+            )
             cursor = connection.execute(
                 "INSERT OR IGNORE INTO service_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (

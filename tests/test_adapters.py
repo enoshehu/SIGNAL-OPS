@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter
+from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter, DWDPOIAdapter
 from signalops.config import DBSettings, DWDSettings
 from signalops.domain import RawArtifact
 from signalops.http import Download
@@ -40,6 +40,48 @@ def dwd_product_zip(filename: str, header: str, row: str) -> bytes:
 
 
 class AdapterTests(unittest.TestCase):
+    def test_dwd_poi_parses_all_live_metrics_and_converts_wind_units(self) -> None:
+        columns = [
+            "surface observations",
+            "Parameter description",
+            "dry_bulb_temperature_at_2_meter_above_ground",
+            "relative_humidity",
+            "precipitation_amount_last_hour",
+            "mean_wind_speed_during last_10_min_at_10_meters_above_ground",
+            "mean_wind_direction_during_last_10 min_at_10_meters_above_ground",
+            "maximum_wind_speed_last_hour",
+        ]
+        content = (
+            ";".join(columns)
+            + "\r\nH419_;;;;;;;\r\nDatum;Zeit;;;;;;\r\n"
+            + "14.09.26;10:00;18,2;71;2,4;14,4;235;36,0\r\n"
+            + "14.09.26;11:00;---;70;0;7,2;---;18,0\r\n"
+        ).encode()
+        settings = DWDSettings(
+            True,
+            "https://opendata.dwd.de/climate_environment/CDC",
+            30,
+            "13670",
+            "unused.zip",
+            "H419",
+        )
+        adapter = DWDPOIAdapter(settings, http=FakeHttpClient(content, "text/csv"))
+
+        artifact = adapter.download()
+        records = list(adapter.parse(artifact))
+
+        self.assertEqual(
+            adapter.url, "https://opendata.dwd.de/weather/weather_reports/poi/H419_-BEOB.csv"
+        )
+        self.assertEqual(artifact.provenance["stream_key"], "live_observations")
+        self.assertEqual(records[0].payload["temperature_c"], 18.2)
+        self.assertEqual(records[0].payload["relative_humidity_pct"], 71.0)
+        self.assertEqual(records[0].payload["precipitation_mm"], 2.4)
+        self.assertEqual(records[0].payload["wind_speed_m_s"], 4.0)
+        self.assertEqual(records[0].payload["wind_direction_deg"], 235.0)
+        self.assertEqual(records[0].payload["wind_gust_m_s"], 10.0)
+        self.assertIsNone(records[1].payload["temperature_c"])
+
     def test_dwd_public_adapter_is_ready_without_credentials(self) -> None:
         settings = DWDSettings(
             True,
@@ -102,6 +144,28 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(wind_record.payload["wind_speed_m_s"], 4.2)
         self.assertEqual(wind_record.payload["wind_direction_deg"], 235.0)
         self.assertEqual(precipitation.download().provenance["stream_key"], "precipitation")
+
+    def test_dwd_extreme_wind_archive_parses_hourly_gust(self) -> None:
+        settings = DWDSettings(
+            True, "https://example.invalid", 30, "01303", "weather_{station_id}.zip"
+        )
+        adapter = DWDOpenDataAdapter(
+            settings,
+            http=FakeHttpClient(
+                dwd_product_zip(
+                    "produkt_fx_stunde_sample.txt",
+                    "STATIONS_ID;MESS_DATUM;QN_8;FX_911",
+                    "1303;2026091409;3;12.7",
+                ),
+                "application/zip",
+            ),
+            product="extreme_wind",
+        )
+
+        record = next(iter(adapter.parse(adapter.download())))
+
+        self.assertEqual(record.payload["wind_gust_m_s"], 12.7)
+        self.assertEqual(adapter.download().provenance["stream_key"], "extreme_wind")
 
     def test_db_adapter_sends_secret_headers_and_parses_xml(self) -> None:
         xml = (

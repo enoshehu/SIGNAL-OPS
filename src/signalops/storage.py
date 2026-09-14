@@ -65,12 +65,39 @@ class SQLiteRecordStore:
         scope_key = self._scope_key(artifact)
         stream_key = self._stream_key(artifact)
         existing = self.connection.execute(
-            "SELECT record_count FROM artifact_imports "
+            "SELECT id, record_count FROM artifact_imports "
             "WHERE source = ? AND scope_key = ? AND stream_key = ? AND artifact_sha256 = ?",
             (artifact.source, scope_key, stream_key, checksum),
         ).fetchone()
         if existing:
-            return StorageResult(existing[0], 0)
+            import_id, stored_count = existing
+            rows = list(records)
+            if stored_count == len(rows):
+                return StorageResult(stored_count, 0)
+            with self.connection:
+                before = self.connection.total_changes
+                self.connection.executemany(
+                    """
+                    INSERT OR IGNORE INTO parsed_raw_records
+                    (import_id, external_id, payload_json, provenance_json)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            import_id,
+                            record.external_id,
+                            json.dumps(record.payload, sort_keys=True),
+                            json.dumps(record.provenance, sort_keys=True),
+                        )
+                        for record in rows
+                    ],
+                )
+                inserted = self.connection.total_changes - before
+                self.connection.execute(
+                    "UPDATE artifact_imports SET record_count = ? WHERE id = ?",
+                    (len(rows), import_id),
+                )
+            return StorageResult(len(rows), inserted)
 
         rows = list(records)
         with self.connection:

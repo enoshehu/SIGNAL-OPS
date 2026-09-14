@@ -99,6 +99,20 @@ class SQLiteRecordStoreTests(unittest.TestCase):
             self.assertEqual(import_count, 1)
             self.assertEqual(record_count, 1)
 
+    def test_replay_restores_records_pruned_from_an_unchanged_archive(self) -> None:
+        artifact = sample_artifact()
+        record = sample_record(artifact)
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with SQLiteRecordStore(database) as store:
+                store.store(artifact, Path("weather.zip"), [record])
+                store.connection.execute("DELETE FROM parsed_raw_records")
+                store.connection.execute("UPDATE artifact_imports SET record_count = 0")
+                restored = store.store(artifact, Path("weather.zip"), [record])
+
+            self.assertEqual(restored.records_seen, 1)
+            self.assertEqual(restored.records_inserted, 1)
+
     def test_changed_artifact_keeps_a_second_record_version(self) -> None:
         first = sample_artifact("first")
         second = sample_artifact("second")

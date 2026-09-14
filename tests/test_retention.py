@@ -84,6 +84,39 @@ class RetentionTests(unittest.TestCase):
             self.assertEqual(future, [("future",)])
             self.assertEqual(record_count, 1)
             self.assertEqual(result.raw_artifacts_deleted, 1)
+            self.assertEqual(result.raw_cutoff, cutoff)
+            self.assertFalse(artifact.exists())
+
+    def test_raw_files_can_expire_before_analytical_rows(self) -> None:
+        now = datetime(2026, 9, 14, 12, tzinfo=UTC)
+        data_cutoff = now - timedelta(days=180)
+        raw_cutoff = now - timedelta(days=30)
+        with TemporaryDirectory() as directory:
+            data_dir = Path(directory)
+            database = data_dir / "signalops.sqlite"
+            raw = data_dir / "raw" / "dwd" / "2026-07-01"
+            raw.mkdir(parents=True)
+            artifact = raw / "weather.zip"
+            artifact.write_bytes(b"weather")
+            artifact.with_suffix(".zip.metadata.json").write_text(
+                json.dumps({"retrieved_at": "2026-07-01T00:00:00+00:00"}),
+                encoding="utf-8",
+            )
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    "CREATE TABLE observations (observation_id TEXT, observed_at TEXT)"
+                )
+                connection.execute(
+                    "INSERT INTO observations VALUES ('kept', '2026-07-01T00:00:00+00:00')"
+                )
+
+            result = apply_retention(database, data_dir, data_cutoff, raw_cutoff=raw_cutoff)
+
+            with sqlite3.connect(database) as connection:
+                self.assertEqual(
+                    connection.execute("SELECT COUNT(*) FROM observations").fetchone()[0], 1
+                )
+            self.assertEqual(result.raw_artifacts_deleted, 1)
             self.assertFalse(artifact.exists())
 
 

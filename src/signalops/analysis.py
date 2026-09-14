@@ -24,6 +24,7 @@ COLUMNS = (
     "relative_humidity_pct",
     "precipitation_mm",
     "wind_speed_m_s",
+    "wind_gust_m_s",
     "wind_direction_deg",
     "weather_available",
     "rail_available",
@@ -33,27 +34,26 @@ COLUMNS = (
 
 def hourly_summary(database: Path) -> list[dict[str, object]]:
     query = """
-    WITH weather_import_candidates AS (
-      SELECT DISTINCT o.dataset_key, o.entity_key, o.import_id, a.retrieved_at
+    WITH weather_candidates AS (
+      SELECT o.*, a.retrieved_at,
+             json_extract(e.attributes_json, '$.city') AS city,
+             json_extract(e.attributes_json, '$.role') AS station_role
       FROM observations o
       JOIN artifact_imports a ON a.id = o.import_id
+      JOIN entities e ON e.entity_key = o.entity_key
     ),
-    weather_import_ranked AS (
+    weather_ranked AS (
       SELECT *, ROW_NUMBER() OVER (
-        PARTITION BY dataset_key, entity_key
-        ORDER BY julianday(retrieved_at) DESC, import_id DESC
+        PARTITION BY city, observed_at, metric
+        ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END,
+                 CASE WHEN station_role IS NULL THEN 0 ELSE 1 END,
+                 CASE WHEN dataset_key = 'dwd_live_observations' THEN 1 ELSE 0 END,
+                 julianday(retrieved_at) DESC, import_id DESC
       ) AS row_number
-      FROM weather_import_candidates
-    ),
-    weather_imports AS (
-      SELECT dataset_key, entity_key, import_id
-      FROM weather_import_ranked WHERE row_number = 1
+      FROM weather_candidates
     ),
     latest_weather AS (
-      SELECT o.* FROM observations o
-      JOIN weather_imports i
-        ON i.dataset_key = o.dataset_key
-       AND i.entity_key = o.entity_key AND i.import_id = o.import_id
+      SELECT * FROM weather_ranked WHERE row_number = 1
     ),
     weather AS (
       SELECT json_extract(e.attributes_json, '$.city') AS city,
@@ -67,6 +67,8 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
                AS precipitation_mm,
              MAX(CASE WHEN o.metric = 'wind_speed' THEN o.value END)
                AS wind_speed_m_s,
+             MAX(CASE WHEN o.metric = 'wind_gust' THEN o.value END)
+               AS wind_gust_m_s,
              MAX(CASE WHEN o.metric = 'wind_direction' THEN o.value END)
                AS wind_direction_deg
       FROM latest_weather o
@@ -171,7 +173,7 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
            r.matched_change_events, r.cancelled_events, r.delayed_events,
            r.average_delay_minutes, r.maximum_delay_minutes,
            w.air_temperature_c, w.relative_humidity_pct, w.precipitation_mm,
-           w.wind_speed_m_s, w.wind_direction_deg,
+           w.wind_speed_m_s, w.wind_gust_m_s, w.wind_direction_deg,
            CASE WHEN w.city IS NULL THEN 0 ELSE 1 END AS weather_available,
            CASE WHEN r.city IS NULL THEN 0 ELSE 1 END AS rail_available,
            CASE WHEN w.city IS NOT NULL AND r.city IS NOT NULL THEN 1 ELSE 0 END AS paired

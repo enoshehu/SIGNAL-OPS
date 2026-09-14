@@ -7,7 +7,7 @@ flowchart LR
   DWD --> RAW[Raw bytes + metadata + SHA-256]
   DB --> RAW
   RAW --> PARSED[Source-shaped parsed records]
-  PARSED --> RETAIN[Seven-day retention boundary]
+  PARSED --> RETAIN[180-day analytical retention boundary]
   RETAIN --> CANON[Canonical observations + service events]
   CANON --> DQ[Quality results + schema snapshots]
   CANON --> JOIN[City + exact UTC-hour analysis]

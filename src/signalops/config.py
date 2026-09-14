@@ -23,6 +23,9 @@ class SourceSettings:
 class DWDSettings(SourceSettings):
     station_id: str
     archive_path: str
+    poi_id: str = ""
+    poi_base_url: str = "https://opendata.dwd.de"
+    poi_path: str = "weather/weather_reports/poi/{poi_token}-BEOB.csv"
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +47,7 @@ class CitySettings:
     db_eva_number: str
     dwd_station_name: str
     dwd_station_id: str
+    dwd_poi_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +56,7 @@ class Settings:
     environment: str
     data_dir: Path
     retention_days: int
+    raw_retention_days: int
     default_city: str
     cities: tuple[CitySettings, ...]
     dwd: DWDSettings
@@ -87,6 +92,12 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
         dwd_base = _source(sources["dwd"], "DWD")
         db_base = _source(sources["db"], "DB")
         dwd_archive_path = str(sources["dwd"]["archive_path"])
+        dwd_poi_base_url = str(
+            sources["dwd"].get("poi_base_url", "https://opendata.dwd.de")
+        ).rstrip("/")
+        dwd_poi_path = str(
+            sources["dwd"].get("poi_path", "weather/weather_reports/poi/{poi_token}-BEOB.csv")
+        )
         cities = tuple(
             CitySettings(
                 key=str(key),
@@ -95,11 +106,13 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
                 db_eva_number=str(value["db_eva_number"]),
                 dwd_station_name=str(value["dwd_station_name"]),
                 dwd_station_id=str(value["dwd_station_id"]),
+                dwd_poi_id=str(value["dwd_poi_id"]),
             )
             for key, value in raw["cities"].items()
         )
         default_city = str(app.get("default_city", "essen"))
         retention_days = int(app.get("retention_days", 7))
+        raw_retention_days = int(app.get("raw_retention_days", min(retention_days, 30)))
     except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as exc:
         raise ConfigurationError(f"Could not load configuration from {config_path}") from exc
 
@@ -108,6 +121,10 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
         raise ConfigurationError(f"Unknown default city: {default_city}")
     if retention_days <= 0:
         raise ConfigurationError("retention_days must be positive")
+    if raw_retention_days <= 0 or raw_retention_days > retention_days:
+        raise ConfigurationError(
+            "raw_retention_days must be positive and no greater than retention_days"
+        )
     selected = city_by_key[default_city]
 
     data_dir = Path(os.getenv("SIGNALOPS_DATA_DIR", str(app.get("data_dir", "data"))))
@@ -119,6 +136,7 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
         environment=os.getenv("SIGNALOPS_ENV", str(app.get("environment", "development"))),
         data_dir=data_dir,
         retention_days=retention_days,
+        raw_retention_days=raw_retention_days,
         default_city=default_city,
         cities=cities,
         dwd=DWDSettings(
@@ -127,6 +145,9 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
             timeout_seconds=dwd_base.timeout_seconds,
             station_id=selected.dwd_station_id,
             archive_path=dwd_archive_path,
+            poi_id=selected.dwd_poi_id,
+            poi_base_url=dwd_poi_base_url,
+            poi_path=dwd_poi_path,
         ),
         db=DBSettings(
             enabled=db_base.enabled,

@@ -35,6 +35,8 @@ def _condition_rows(rows: list[dict[str, object]], name: str) -> list[dict[str, 
         return [row for row in rows if float(row.get("precipitation_mm") or 0) >= 1]
     if name == "strong wind (≥10 m/s)":
         return [row for row in rows if float(row.get("wind_speed_m_s") or 0) >= 10]
+    if name == "strong gust (≥15 m/s)":
+        return [row for row in rows if float(row.get("wind_gust_m_s") or 0) >= 15]
     raise ValueError(f"Unknown condition: {name}")
 
 
@@ -46,6 +48,7 @@ def condition_summaries(database: Path) -> tuple[ConditionSummary, ...]:
         "hot (≥30 °C)",
         "rain (≥1 mm/h)",
         "strong wind (≥10 m/s)",
+        "strong gust (≥15 m/s)",
     ):
         rows = _condition_rows(paired, name)
         summaries.append(
@@ -102,6 +105,7 @@ def render_profile(database: Path) -> str:
         ("relative_humidity_pct", "humidity"),
         ("precipitation_mm", "precipitation"),
         ("wind_speed_m_s", "wind speed"),
+        ("wind_gust_m_s", "wind gust"),
     )
     lines.extend(["", "## Missingness within paired hours", ""])
     for field, label in fields:
@@ -129,7 +133,10 @@ def render_profile(database: Path) -> str:
             "## Interpretation limits",
             "",
             "- Stations are city-area proxies, not measurements at railway platforms.",
-            "- Duisburg wind uses Xanten, approximately 26.5 km from Duisburg-Baerl.",
+            (
+                "- Duisburg live POI wind uses Duisburg-Baerl; historical CDC wind and gust "
+                "use Xanten, approximately 26.5 km away."
+            ),
             "- DB change feeds are snapshots; unmatched changes are not counted as delays.",
             "- Exact UTC-hour matching reduces sample size and does not control for other causes.",
             "- Condition thresholds are transparent descriptive bands, not causal models.",

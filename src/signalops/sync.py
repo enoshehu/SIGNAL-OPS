@@ -13,7 +13,12 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter, RawFileStore
+from signalops.adapters import (
+    DeutscheBahnTimetablesAdapter,
+    DWDOpenDataAdapter,
+    DWDPOIAdapter,
+    RawFileStore,
+)
 from signalops.analysis import export_hourly_csv, hourly_summary
 from signalops.catalog import DatasetDefinition, load_catalog
 from signalops.config import Settings, load_settings
@@ -213,6 +218,18 @@ def configured_targets(
 def _adapter(settings: Settings, target: SyncTarget, now: datetime):
     city = settings.city(target.city_key)
     if target.dataset.adapter == "dwd":
+        delivery = str(target.dataset.source.get("delivery", "cdc"))
+        if delivery == "poi":
+            entity = next(
+                item for item in target.dataset.entities if item.get("city") == target.city_key
+            )
+            return DWDPOIAdapter(
+                replace(
+                    settings.dwd,
+                    station_id=target.scope_key,
+                    poi_id=str(entity.get("poi_id", city.dwd_poi_id)),
+                )
+            )
         archive_path = str(target.dataset.source.get("archive_path", settings.dwd.archive_path))
         product = str(target.dataset.source.get("product", "air_temperature"))
         return DWDOpenDataAdapter(
@@ -308,7 +325,8 @@ def synchronize(
         return SyncSummary(tuple(items))
 
     cutoff = current_time.astimezone(UTC) - timedelta(days=settings.retention_days)
-    retention = apply_retention(database, settings.data_dir, cutoff)
+    raw_cutoff = current_time.astimezone(UTC) - timedelta(days=settings.raw_retention_days)
+    retention = apply_retention(database, settings.data_dir, cutoff, raw_cutoff=raw_cutoff)
     normalized_rows = sum(normalize(database, catalog[key]) for key in sorted(touched))
     quality_failures: list[str] = []
     for target in targets:

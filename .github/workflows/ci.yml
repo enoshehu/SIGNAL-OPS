@@ -1,0 +1,38 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install development tools
+        run: python -m pip install -e '.[dev]'
+      - name: Lint
+        run: ruff check src tests
+      - name: Check formatting
+        run: ruff format --check src tests
+      - name: Test
+        run: python -m unittest discover -s tests -v
+      - name: Rebuild committed evidence
+        if: matrix.python-version == '3.13'
+        run: PYTHONPATH=src python scripts/rebuild_evidence.py
+      - name: Build package
+        if: matrix.python-version == '3.13'
+        run: python -m pip wheel --no-deps --wheel-dir dist .

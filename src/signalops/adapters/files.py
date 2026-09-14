@@ -23,10 +23,13 @@ class RawFileStore:
         directory.mkdir(parents=True, exist_ok=True)
         filename = Path(artifact.filename).name
         target = directory / f"{timestamp}_{filename}"
-        if target.exists() or target.with_suffix(target.suffix + ".metadata.json").exists():
+        metadata_target = target.with_suffix(target.suffix + ".metadata.json")
+        # Recover a previous interrupted publication. Content is the commit marker because it is
+        # always published last; a metadata-only sidecar is therefore safe to remove and retry.
+        if metadata_target.exists() and not target.exists():
+            metadata_target.unlink()
+        if target.exists() or metadata_target.exists():
             raise FileExistsError(f"Raw artifact already exists: {target}")
-        self._atomic_write(target, artifact.content)
-
         metadata = {
             "source": artifact.source,
             "external_id": artifact.external_id,
@@ -38,9 +41,16 @@ class RawFileStore:
             "byte_count": len(artifact.content),
             "sha256": hashlib.sha256(artifact.content).hexdigest(),
         }
-        metadata_target = target.with_suffix(target.suffix + ".metadata.json")
         body = json.dumps(metadata, indent=2, sort_keys=True).encode("utf-8") + b"\n"
-        self._atomic_write(metadata_target, body)
+        try:
+            # Publish metadata first and content last. A reader can only discover the artifact
+            # path after its verified sidecar is already present.
+            self._atomic_write(metadata_target, body)
+            self._atomic_write(target, artifact.content)
+        except BaseException:
+            target.unlink(missing_ok=True)
+            metadata_target.unlink(missing_ok=True)
+            raise
         return target
 
     @staticmethod

@@ -3,18 +3,28 @@
 from __future__ import annotations
 
 import csv
+import sqlite3
 from contextlib import closing
 from pathlib import Path
-import sqlite3
-
 
 COLUMNS = (
-    "city", "hour_utc", "rail_station", "weather_station",
-    "planned_arrivals", "planned_departures", "planned_events",
-    "matched_change_events", "cancelled_events", "delayed_events",
-    "average_delay_minutes", "maximum_delay_minutes",
-    "air_temperature_c", "relative_humidity_pct",
-    "weather_available", "rail_available", "paired",
+    "city",
+    "hour_utc",
+    "rail_station",
+    "weather_station",
+    "planned_arrivals",
+    "planned_departures",
+    "planned_events",
+    "matched_change_events",
+    "cancelled_events",
+    "delayed_events",
+    "average_delay_minutes",
+    "maximum_delay_minutes",
+    "air_temperature_c",
+    "relative_humidity_pct",
+    "weather_available",
+    "rail_available",
+    "paired",
 )
 
 

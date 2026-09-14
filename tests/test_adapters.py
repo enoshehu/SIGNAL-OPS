@@ -1,6 +1,6 @@
+import unittest
 from datetime import UTC, datetime
 from io import BytesIO
-import unittest
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter
@@ -60,7 +60,9 @@ class AdapterTests(unittest.TestCase):
             adapter.download()
 
     def test_db_adapter_sends_secret_headers_and_parses_xml(self) -> None:
-        xml = b'<timetable station="Berlin Hbf"><s id="stop-1"><dp pt="2609141000"/></s></timetable>'
+        xml = (
+            b'<timetable station="Berlin Hbf"><s id="stop-1"><dp pt="2609141000"/></s></timetable>'
+        )
         http = FakeHttpClient(xml, "application/xml")
         settings = DBSettings(True, "https://db.example/v1", 30, "8011160", "client", "key")
         adapter = DeutscheBahnTimetablesAdapter(
@@ -72,10 +74,19 @@ class AdapterTests(unittest.TestCase):
         artifact = adapter.download()
         records = list(adapter.parse(artifact))
 
-        self.assertEqual(adapter.url, "https://db.example/v1/plan/8011160/260914/10")
+        self.assertEqual(adapter.url, "https://db.example/v1/plan/8011160/260914/12")
         self.assertEqual(http.calls[0][1], {"DB-Client-Id": "client", "DB-Api-Key": "key"})
         self.assertEqual(records[0].external_id, "stop-1")
         self.assertEqual(records[0].payload["feed"], "plan")
+
+    def test_db_plan_request_converts_input_offset_to_berlin_time(self) -> None:
+        settings = DBSettings(True, "https://db.example/v1", 30, "8000098", "client", "key")
+        adapter = DeutscheBahnTimetablesAdapter(
+            settings,
+            requested_at=datetime(2026, 1, 14, 23, 0, tzinfo=UTC),
+        )
+
+        self.assertEqual(adapter.url, "https://db.example/v1/plan/8000098/260115/00")
 
     def test_db_changes_feed_uses_full_changes_endpoint(self) -> None:
         xml = b'<timetable><s id="stop-1"><dp ct="2609141012" cs="c"/></s></timetable>'

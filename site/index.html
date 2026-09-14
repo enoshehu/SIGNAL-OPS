@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SIGNAL OPS Rhine-Ruhr weather and railway operations dashboard">
+  <title>SIGNAL//OPS — Rhine–Ruhr</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="signal-line" aria-hidden="true"></div>
+  <header class="masthead">
+    <a class="brand" href="#top" aria-label="SIGNAL OPS home"><span>SIGNAL</span><b>//</b><span>OPS</span></a>
+    <p>Rhine–Ruhr field report <span id="generated">loading</span></p>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Weather × railway operations</p>
+        <h1>Evidence first.<br><em>Signals second.</em></h1>
+        <p class="lede">A four-city data investigation that keeps missing evidence visible.</p>
+      </div>
+      <aside class="status-card">
+        <span>Project state</span>
+        <strong id="project-status">Loading</strong>
+        <small><b id="paired-hours">—</b> paired city-hours</small>
+      </aside>
+    </section>
+
+    <section class="notice" aria-live="polite">
+      <span>Current limitation</span>
+      <p id="notice-text">Loading source coverage…</p>
+    </section>
+
+    <section class="section-grid">
+      <div>
+        <p class="section-number">01 / RAIL SNAPSHOT</p>
+        <h2>What the saved railway hour shows</h2>
+      </div>
+      <div class="controls">
+        <label for="city-select">City</label>
+        <select id="city-select"><option value="all">All cities</option></select>
+      </div>
+    </section>
+
+    <section class="metric-strip" id="metrics" aria-label="Railway metrics"></section>
+
+    <section class="comparison">
+      <div class="chart-panel">
+        <div class="panel-heading"><h3>Positive delays</h3><span>share of planned events</span></div>
+        <div id="delay-chart" class="bars"></div>
+      </div>
+      <div class="table-panel">
+        <div class="panel-heading"><h3>City detail</h3><span>one observed slice</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Mean +delay</th><th>Max</th></tr></thead>
+            <tbody id="city-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="sources-section">
+      <div>
+        <p class="section-number">02 / DATA READINESS</p>
+        <h2>The dashboard reports what it cannot yet know.</h2>
+      </div>
+      <div id="source-list" class="source-list"></div>
+    </section>
+
+    <section class="method">
+      <p class="section-number">03 / METHOD</p>
+      <div class="method-grid">
+        <h2>Same city.<br>Same UTC hour.<br>No causal claim.</h2>
+        <p>Railway plans and changes are matched by station, stop ID, and arrival or departure type. Weather stations are city-area proxies. Unmatched records remain visible instead of becoming zero.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>SIGNAL//OPS v1.0</span><span>Source-backed student engineering</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>

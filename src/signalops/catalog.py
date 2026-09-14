@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-import tomllib
 
 
 @dataclass(frozen=True, slots=True)
@@ -12,6 +12,7 @@ class DatasetDefinition:
     key: str
     name: str
     adapter: str
+    stream: str
     entity_type: str
     refresh_minutes: int
     source: dict[str, object]
@@ -33,6 +34,7 @@ def load_catalog(directory: Path) -> dict[str, DatasetDefinition]:
             key=str(dataset["key"]),
             name=str(dataset["name"]),
             adapter=str(dataset["adapter"]),
+            stream=str(dataset.get("stream", "default")),
             entity_type=str(dataset["entity_type"]),
             refresh_minutes=int(dataset["refresh_minutes"]),
             source=dict(raw["source"]),
@@ -42,7 +44,7 @@ def load_catalog(directory: Path) -> dict[str, DatasetDefinition]:
         )
         if definition.key in catalog:
             raise ValueError(f"Duplicate dataset key: {definition.key}")
-        if definition.adapter not in {"dwd", "db"} or definition.refresh_minutes <= 0:
+        if not definition.adapter or not definition.stream or definition.refresh_minutes <= 0:
             raise ValueError(f"Invalid dataset definition: {path}")
         catalog[definition.key] = definition
     return catalog

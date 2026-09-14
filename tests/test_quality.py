@@ -1,10 +1,10 @@
-from datetime import UTC, datetime
-from dataclasses import replace
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from contextlib import closing
 import sqlite3
 import unittest
+from contextlib import closing
+from dataclasses import replace
+from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from signalops.catalog import load_catalog
 from signalops.domain import RawArtifact, RawRecord
@@ -14,6 +14,80 @@ from signalops.universal import normalize
 
 
 class QualityTests(unittest.TestCase):
+    def test_db_plan_quality_does_not_select_newer_changes_import(self) -> None:
+        catalog = load_catalog(Path("config/datasets"))
+        plan_definition = catalog["db_timetables"]
+        changes_definition = catalog["db_changes"]
+        retrieved = datetime(2026, 9, 14, tzinfo=UTC)
+        plan_artifact = RawArtifact(
+            "db",
+            "plan",
+            "plan.xml",
+            retrieved,
+            b"plan",
+            "application/xml",
+            {
+                "source_url": "https://example.invalid/plan",
+                "sha256": "plan",
+                "station_eva": "8000098",
+                "feed": "plan",
+            },
+        )
+        change_artifact = RawArtifact(
+            "db",
+            "changes",
+            "changes.xml",
+            retrieved,
+            b"changes",
+            "application/xml",
+            {
+                "source_url": "https://example.invalid/changes",
+                "sha256": "changes",
+                "station_eva": "8000098",
+                "feed": "changes",
+            },
+        )
+        plan_record = RawRecord(
+            "db",
+            "stop-1",
+            retrieved,
+            {
+                "station_eva": "8000098",
+                "feed": "plan",
+                "stop_id": "stop-1",
+                "raw_xml": '<s id="stop-1"><dp pt="2609141000" /></s>',
+            },
+            {"source_url": "https://example.invalid/plan"},
+        )
+        change_record = RawRecord(
+            "db",
+            "stop-1",
+            retrieved,
+            {
+                "station_eva": "8000098",
+                "feed": "changes",
+                "stop_id": "stop-1",
+                "raw_xml": '<s id="stop-1"><dp ct="2609141010" /></s>',
+            },
+            {"source_url": "https://example.invalid/changes"},
+        )
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with SQLiteRecordStore(database) as store:
+                store.store(plan_artifact, Path("plan.xml"), [plan_record])
+                store.store(change_artifact, Path("changes.xml"), [change_record])
+            normalize(database, plan_definition)
+            normalize(database, changes_definition)
+            assess(database, plan_definition, entity_key="db:8000098")
+            with closing(sqlite3.connect(database)) as connection:
+                assessed_import = connection.execute(
+                    "SELECT import_id FROM quality_runs WHERE dataset_key = 'db_timetables'"
+                ).fetchone()[0]
+                plan_import = connection.execute(
+                    "SELECT id FROM artifact_imports WHERE stream_key = 'plan'"
+                ).fetchone()[0]
+        self.assertEqual(assessed_import, plan_import)
+
     def test_quality_migrates_an_old_database_before_using_station_scope(self) -> None:
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
         definition = replace(definition, quality=({"key": "valid_timestamp"},))
@@ -61,16 +135,25 @@ class QualityTests(unittest.TestCase):
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
         now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         artifact = RawArtifact(
-            "dwd", "weather", "weather.zip", now, b"x", "application/zip",
-            {"source_url": "https://example.invalid", "sha256": "gap",
-             "station_id": "01303"},
+            "dwd",
+            "weather",
+            "weather.zip",
+            now,
+            b"x",
+            "application/zip",
+            {"source_url": "https://example.invalid", "sha256": "gap", "station_id": "01303"},
         )
         records = [
             RawRecord(
-                "dwd", f"01303-{hour}", now,
-                {"station_id": "01303",
-                 "observed_at_utc": (now.replace(hour=10 + hour)).strftime("%Y%m%d%H"),
-                 "temperature_c": 18.0, "relative_humidity_pct": 70.0},
+                "dwd",
+                f"01303-{hour}",
+                now,
+                {
+                    "station_id": "01303",
+                    "observed_at_utc": (now.replace(hour=10 + hour)).strftime("%Y%m%d%H"),
+                    "temperature_c": 18.0,
+                    "relative_humidity_pct": 70.0,
+                },
                 {"source_url": "https://example.invalid"},
             )
             for hour in (0, 2)
@@ -88,9 +171,11 @@ class QualityTests(unittest.TestCase):
     def test_unknown_configured_rule_is_rejected(self) -> None:
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
         definition = replace(definition, quality=({"key": "mystery_rule"},))
-        with TemporaryDirectory() as directory:
-            with self.assertRaisesRegex(ValueError, "Unknown quality rule"):
-                assess(Path(directory) / "signalops.sqlite", definition)
+        with (
+            TemporaryDirectory() as directory,
+            self.assertRaisesRegex(ValueError, "Unknown quality rule"),
+        ):
+            assess(Path(directory) / "signalops.sqlite", definition)
 
     def test_city_scope_does_not_use_another_citys_latest_import(self) -> None:
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
@@ -101,14 +186,14 @@ class QualityTests(unittest.TestCase):
                 connection.executescript(
                     """
                     CREATE TABLE artifact_imports
-                      (id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT);
+                      (id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT, stream_key TEXT);
                     CREATE TABLE parsed_raw_records
                       (import_id INTEGER, payload_json TEXT);
                     CREATE TABLE observations
                       (observation_id TEXT, dataset_key TEXT, entity_key TEXT, import_id INTEGER,
                        observed_at TEXT, metric TEXT, value REAL);
-                    INSERT INTO artifact_imports VALUES (1, 'dwd', '01303');
-                    INSERT INTO artifact_imports VALUES (2, 'dwd', '13670');
+                    INSERT INTO artifact_imports VALUES (1, 'dwd', '01303', 'observations');
+                    INSERT INTO artifact_imports VALUES (2, 'dwd', '13670', 'observations');
                     INSERT INTO observations VALUES
                       ('essen-row', 'dwd_weather', 'dwd:01303', 1,
                        '2026-09-14T10:00:00+00:00', 'air_temperature', 18.0);
@@ -122,12 +207,22 @@ class QualityTests(unittest.TestCase):
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
         now = datetime.now(UTC)
         artifact = RawArtifact(
-            "dwd", "weather", "weather.zip", now, b"x", "application/zip",
-            {"source_url": "https://example.invalid", "sha256": "quality-one",
-             "station_id": "01303"},
+            "dwd",
+            "weather",
+            "weather.zip",
+            now,
+            b"x",
+            "application/zip",
+            {
+                "source_url": "https://example.invalid",
+                "sha256": "quality-one",
+                "station_id": "01303",
+            },
         )
         record = RawRecord(
-            "dwd", "01303-now", now,
+            "dwd",
+            "01303-now",
+            now,
             {
                 "station_id": "01303",
                 "observed_at_utc": now.strftime("%Y%m%d%H"),
@@ -158,14 +253,24 @@ class QualityTests(unittest.TestCase):
         definition = load_catalog(Path("config/datasets"))["dwd_weather"]
         now = datetime.now(UTC)
         artifact = RawArtifact(
-            "dwd", "weather", "weather.zip", now, b"x", "application/zip",
-            {"source_url": "https://example.invalid", "sha256": "stable",
-             "station_id": "01303"},
+            "dwd",
+            "weather",
+            "weather.zip",
+            now,
+            b"x",
+            "application/zip",
+            {"source_url": "https://example.invalid", "sha256": "stable", "station_id": "01303"},
         )
         record = RawRecord(
-            "dwd", "01303-now", now,
-            {"station_id": "01303", "observed_at_utc": now.strftime("%Y%m%d%H"), "temperature_c": 18.0,
-             "relative_humidity_pct": 70.0},
+            "dwd",
+            "01303-now",
+            now,
+            {
+                "station_id": "01303",
+                "observed_at_utc": now.strftime("%Y%m%d%H"),
+                "temperature_c": 18.0,
+                "relative_humidity_pct": 70.0,
+            },
             {"source_url": "https://example.invalid"},
         )
         with TemporaryDirectory() as directory:
@@ -192,12 +297,23 @@ class QualityTests(unittest.TestCase):
             database = Path(directory) / "signalops.sqlite"
             with SQLiteRecordStore(database) as store:
                 first_artifact = RawArtifact(
-                    "dwd", "weather", "first.zip", now, b"one", "application/zip",
-                    {"source_url": "https://example.invalid", "sha256": "first",
-                     "station_id": "01303"},
+                    "dwd",
+                    "weather",
+                    "first.zip",
+                    now,
+                    b"one",
+                    "application/zip",
+                    {
+                        "source_url": "https://example.invalid",
+                        "sha256": "first",
+                        "station_id": "01303",
+                    },
                 )
                 first_record = RawRecord(
-                    "dwd", "01303-first", now, base_payload,
+                    "dwd",
+                    "01303-first",
+                    now,
+                    base_payload,
                     {"source_url": "https://example.invalid"},
                 )
                 store.store(first_artifact, Path("first.zip"), [first_record])
@@ -206,12 +322,23 @@ class QualityTests(unittest.TestCase):
 
             with SQLiteRecordStore(database) as store:
                 second_artifact = RawArtifact(
-                    "dwd", "weather", "second.zip", now, b"two", "application/zip",
-                    {"source_url": "https://example.invalid", "sha256": "second",
-                     "station_id": "01303"},
+                    "dwd",
+                    "weather",
+                    "second.zip",
+                    now,
+                    b"two",
+                    "application/zip",
+                    {
+                        "source_url": "https://example.invalid",
+                        "sha256": "second",
+                        "station_id": "01303",
+                    },
                 )
                 second_record = RawRecord(
-                    "dwd", "01303-second", now, {**base_payload, "new_field": "example"},
+                    "dwd",
+                    "01303-second",
+                    now,
+                    {**base_payload, "new_field": "example"},
                     {"source_url": "https://example.invalid"},
                 )
                 store.store(second_artifact, Path("second.zip"), [second_record])

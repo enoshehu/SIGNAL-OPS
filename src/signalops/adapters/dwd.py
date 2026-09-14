@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import csv
+from collections.abc import Iterable
 from io import BytesIO, TextIOWrapper
 from pathlib import PurePosixPath
-from typing import Iterable
 from zipfile import BadZipFile, ZipFile
 
 from signalops.config import DWDSettings

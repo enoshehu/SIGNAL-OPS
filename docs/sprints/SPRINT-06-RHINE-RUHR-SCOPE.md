@@ -73,15 +73,17 @@ The base configuration now uses `data/rhine_ruhr` by default. Set
 
 ## Verification
 
-- Full offline suite: 40 tests pass.
+- Full offline suite: 46 tests pass.
 - Live DB subscription: verified.
-- Live DB rail records: 241 raw stop records and 353 normalized planned events across four cities.
+- Live DB rail records: 221 raw stop records and 353 normalized planned events across four cities.
 - Live DB change records: 2,599 raw stops and 3,564 normalized event updates.
 - Exact-key reconciliation: 331 of the 353 saved plans have a matching current event; unmatched
   changes outside the saved plan slice are excluded from delay metrics.
 - Live DWD archive availability: verified with HTTP success for all four configured station files.
 - Live DWD records: 52,800 hourly source rows and 105,600 canonical observations.
 - Join coverage: zero paired city-hours because the two retrieved date ranges do not overlap.
+- Reproducibility: the credential-free snapshot is committed under `evidence/raw/` and rebuilds
+  105,600 weather observations, 3,917 railway events, and 52,807 city-hour rows offline.
 
 ## Analysis contract
 

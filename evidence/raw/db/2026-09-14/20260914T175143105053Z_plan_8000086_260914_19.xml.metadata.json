@@ -1,0 +1,14 @@
+{
+  "byte_count": 20234,
+  "content_type": "application/xml",
+  "external_id": "plan-8000086-26091419",
+  "filename": "plan_8000086_260914_19.xml",
+  "provenance": {
+    "source_url": "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/8000086/260914/19",
+    "station_eva": "8000086"
+  },
+  "retrieved_at": "2026-09-14T17:51:43.105053+00:00",
+  "sha256": "ed52ce385c1831b05b600dc7c437923fbdcfa9df5a1bbc1228089adba3bb3743",
+  "source": "db",
+  "source_url": "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/8000086/260914/19"
+}

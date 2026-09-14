@@ -422,3 +422,20 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
 - Rechecked the four official DWD archives; all still end at `2026-09-13T23:00:00+00:00`, so paired
   analysis remains blocked.
 - Added four focused regression tests. The full offline suite now passes 40 tests.
+
+### Professional audit remediation
+
+- Reconnected live DWD and DB adapters to the source-independent ingestion pipeline; the CLI no
+  longer bypasses the architectural contract.
+- Separated DB plan and full-change streams in artifact identity, dataset configuration,
+  normalization, and quality selection. Existing local imports migrated without row loss.
+- Added generic scope and normalizer registration hooks so a new source is not rejected by the
+  catalog or silently treated as railway data.
+- Added enforced dataset, entity, and import foreign keys to canonical observations and events;
+  the Rhine–Ruhr database passes integrity and foreign-key checks after migration.
+- Made failed raw response publication remove both content and metadata instead of leaving a
+  partial pair.
+- Added a credential-free 2.1 MB evidence bundle and offline rebuild command. The clean rebuild
+  reproduces 105,600 weather observations, 3,917 railway events, and 52,807 city-hour rows.
+- Added an MIT license and CI checks for Python 3.11–3.13, Ruff, the unit suite, and the evidence
+  rebuild. The expanded offline suite passes 46 tests.

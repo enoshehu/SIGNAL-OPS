@@ -1,3 +1,3 @@
-from signalops.ports.sources import RecordSink, SourceAdapter
+from signalops.ports.sources import RawArtifactStore, SourceAdapter
 
-__all__ = ["RecordSink", "SourceAdapter"]
+__all__ = ["RawArtifactStore", "SourceAdapter"]

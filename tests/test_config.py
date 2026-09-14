@@ -1,7 +1,7 @@
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import os
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from signalops.config import ConfigurationError, load_settings
@@ -29,6 +29,8 @@ class ConfigurationTests(unittest.TestCase):
         self.assertTrue(settings.db.credentials_configured)
 
     def test_missing_config_has_clear_error(self) -> None:
-        with TemporaryDirectory() as directory:
-            with self.assertRaisesRegex(ConfigurationError, "Could not load configuration"):
-                load_settings(Path(directory) / "missing.toml")
+        with (
+            TemporaryDirectory() as directory,
+            self.assertRaisesRegex(ConfigurationError, "Could not load configuration"),
+        ):
+            load_settings(Path(directory) / "missing.toml")

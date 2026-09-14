@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Mapping
+from pathlib import Path
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,4 +46,5 @@ class RawRecord:
 @dataclass(frozen=True, slots=True)
 class IngestionResult:
     source: str
-    records_written: int
+    artifact_path: Path
+    records_parsed: int

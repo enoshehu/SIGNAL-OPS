@@ -1,0 +1,5 @@
+city,planned_events,matched_change_events,cancelled_events,delayed_events,average_positive_delay_minutes,maximum_positive_delay_minutes,paired_weather_hours
+Düsseldorf,95,95,0,66,12.8,84,0
+Duisburg,83,61,0,47,19.8,83,0
+Essen,51,51,0,35,5.2,27,0
+Köln,124,124,2,73,13.3,90,0

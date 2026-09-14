@@ -1,0 +1,14 @@
+{
+  "byte_count": 78817,
+  "content_type": "application/zip",
+  "external_id": "hourly-air-temperature-13670",
+  "filename": "stundenwerte_TU_13670_akt.zip",
+  "provenance": {
+    "source_url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_13670_akt.zip",
+    "station_id": "13670"
+  },
+  "retrieved_at": "2026-09-14T17:39:03.783923+00:00",
+  "sha256": "78aaee1cec725094b3723bb4ecec44a0cbf745f9246ac7174fb75552d0b6c23f",
+  "source": "dwd",
+  "source_url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_13670_akt.zip"
+}

@@ -1,17 +1,16 @@
-"""Small sink used for deterministic tests and local experiments."""
+"""In-memory raw-artifact store used by deterministic tests."""
 
 from __future__ import annotations
 
-from typing import Iterable
+from pathlib import Path
 
-from signalops.domain import RawRecord
+from signalops.domain import RawArtifact
 
 
-class InMemoryRecordSink:
+class InMemoryRawArtifactStore:
     def __init__(self) -> None:
-        self.records: list[RawRecord] = []
+        self.artifacts: list[RawArtifact] = []
 
-    def write(self, records: Iterable[RawRecord]) -> int:
-        batch = list(records)
-        self.records.extend(batch)
-        return len(batch)
+    def save(self, artifact: RawArtifact) -> Path:
+        self.artifacts.append(artifact)
+        return Path(artifact.filename)

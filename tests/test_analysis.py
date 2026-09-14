@@ -1,10 +1,10 @@
 import csv
-from contextlib import closing
 import json
-from pathlib import Path
 import sqlite3
-from tempfile import TemporaryDirectory
 import unittest
+from contextlib import closing
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from signalops.analysis import COLUMNS, export_hourly_csv, hourly_summary
 from signalops.universal import SCHEMA
@@ -19,27 +19,69 @@ class AnalysisTests(unittest.TestCase):
                 connection.executemany(
                     "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
                     [
-                        ("dwd:01303", "weather_station", "Essen-Bredeney",
-                         json.dumps({"city": "essen"})),
-                        ("db:8000098", "rail_station", "Essen Hbf",
-                         json.dumps({"city": "essen"})),
-                        ("dwd:13670", "weather_station", "Duisburg-Baerl",
-                         json.dumps({"city": "duisburg"})),
+                        (
+                            "dwd:01303",
+                            "weather_station",
+                            "Essen-Bredeney",
+                            json.dumps({"city": "essen"}),
+                        ),
+                        ("db:8000098", "rail_station", "Essen Hbf", json.dumps({"city": "essen"})),
+                        (
+                            "dwd:13670",
+                            "weather_station",
+                            "Duisburg-Baerl",
+                            json.dumps({"city": "duisburg"}),
+                        ),
                     ],
                 )
                 connection.executemany(
                     "INSERT INTO observations VALUES (?, 'dwd_weather', ?, ?, ?, ?, ?, ?, '{}')",
                     [
-                        ("w1", "dwd:01303", 1, "2026-09-14T17:00:00+00:00",
-                         "air_temperature", 18.0, "°C"),
-                        ("w2", "dwd:01303", 1, "2026-09-14T17:00:00+00:00",
-                         "relative_humidity", 70.0, "%"),
-                        ("w3", "dwd:13670", 1, "2026-09-14T17:00:00+00:00",
-                         "air_temperature", 17.0, "°C"),
-                        ("w4", "dwd:01303", 3, "2026-09-14T17:00:00+00:00",
-                         "air_temperature", 19.0, "°C"),
-                        ("w5", "dwd:01303", 3, "2026-09-14T17:00:00+00:00",
-                         "relative_humidity", 69.0, "%"),
+                        (
+                            "w1",
+                            "dwd:01303",
+                            1,
+                            "2026-09-14T17:00:00+00:00",
+                            "air_temperature",
+                            18.0,
+                            "°C",
+                        ),
+                        (
+                            "w2",
+                            "dwd:01303",
+                            1,
+                            "2026-09-14T17:00:00+00:00",
+                            "relative_humidity",
+                            70.0,
+                            "%",
+                        ),
+                        (
+                            "w3",
+                            "dwd:13670",
+                            1,
+                            "2026-09-14T17:00:00+00:00",
+                            "air_temperature",
+                            17.0,
+                            "°C",
+                        ),
+                        (
+                            "w4",
+                            "dwd:01303",
+                            3,
+                            "2026-09-14T17:00:00+00:00",
+                            "air_temperature",
+                            19.0,
+                            "°C",
+                        ),
+                        (
+                            "w5",
+                            "dwd:01303",
+                            3,
+                            "2026-09-14T17:00:00+00:00",
+                            "relative_humidity",
+                            69.0,
+                            "%",
+                        ),
                     ],
                 )
                 connection.execute(

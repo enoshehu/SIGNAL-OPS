@@ -2,6 +2,9 @@
 
 > Status: **Sprint 6 active · Rhine–Ruhr city profiles implemented**
 
+The binding first-release boundary is [Version 1.0 scope](VERSION_1_SCOPE.md). The original
+project vision remains long-term intent; later data domains are not part of version 1.0.
+
 This roadmap shows the complete intended journey from a tested Python foundation to a
 recruiter-ready Weather × Railway DataOps case study. It is a living plan: later sprint scope may
 change after source validation and user review. An unchecked box means planned—not implemented.
@@ -192,7 +195,7 @@ record identifiers; no unsupported quality percentage is presented as fact.
 - [ ] Build an overview, data-quality, and investigation experience.
 - [ ] Add filters for time, location, source, and quality state.
 - [ ] Include metric definitions, refresh timestamps, and caveats.
-- [ ] Add an exportable review queue for investigation workflows.
+- [x] Add an initial formatted Excel review queue for investigation workflows.
 - [ ] Validate accessibility, readability, and screenshot quality.
 - [ ] Record the chosen delivery tool after user approval.
 
@@ -203,7 +206,7 @@ record identifiers; no unsupported quality percentage is presented as fact.
 **Status:** ⬜ Planned  
 **Objective:** Make verification and scheduled operation repeatable.
 
-- [ ] Add CI for tests, linting, and packaging checks.
+- [x] Add CI for tests, linting, and packaging checks.
 - [ ] Add unit, contract, integration, and end-to-end test boundaries.
 - [ ] Add scheduled local or hosted runs only after deployment scope is approved.
 - [ ] Add secrets-safe runtime configuration.
@@ -239,7 +242,7 @@ and evidence that they add value.
 - [ ] PostgreSQL or cloud deployment.
 - [ ] Advanced anomaly detection or forecasting.
 - [ ] Automated Jira/Confluence integration.
-- [ ] Public hosted demo.
+- [ ] Server-hosted query API beyond the static Pages interface.
 
 ## How roadmap updates work
 

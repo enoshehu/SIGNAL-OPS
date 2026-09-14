@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "signalops"
 version = "0.5.0"
-description = "A sprint-built Weather + Railway DataOps reference application"
+description = "A configurable real-world public-data operations platform"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 authors = [{ name = "SIGNAL//OPS contributors" }]
 dependencies = []
 

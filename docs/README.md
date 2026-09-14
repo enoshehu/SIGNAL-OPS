@@ -17,6 +17,7 @@ be copied into a GitHub Wiki later without changing the source-of-truth workflow
 | Review the universal model | [Sprint 4 record](sprints/SPRINT-04-UNIVERSAL-MODEL.md) |
 | Review data-quality evidence | [Sprint 5 record](sprints/SPRINT-05-DATA-QUALITY.md) |
 | Review the Rhine–Ruhr scope | [Sprint 6 record](sprints/SPRINT-06-RHINE-RUHR-SCOPE.md) |
+| Rebuild the measured snapshot | [Reproducible evidence](../evidence/README.md) |
 | Prepare the next sprint update | [Sprint template](sprints/SPRINT_TEMPLATE.md) |
 
 ## Documentation model

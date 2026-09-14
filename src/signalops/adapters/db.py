@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Iterable
 from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
@@ -26,7 +26,8 @@ class DeutscheBahnTimetablesAdapter:
             raise ValueError("DB feed must be 'plan' or 'changes'")
         self.settings = settings
         self.http = http or HttpClient()
-        self.requested_at = requested_at or datetime.now(ZoneInfo("Europe/Berlin"))
+        berlin = ZoneInfo("Europe/Berlin")
+        self.requested_at = (requested_at or datetime.now(berlin)).astimezone(berlin)
         self.feed = feed
 
     @property

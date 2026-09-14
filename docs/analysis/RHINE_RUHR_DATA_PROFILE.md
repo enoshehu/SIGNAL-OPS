@@ -72,4 +72,5 @@ The official DWD archives were checked again on 2026-09-14 and still ended at 23
 - [DWD current hourly station catalogue](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/TU_Stundenwerte_Beschreibung_Stationen.txt)
 - [DWD hourly temperature archives](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/)
 - [DB Timetables product and contract](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables)
-- Preserved raw files and metadata under the local `data/rhine_ruhr/raw/` directory.
+- Preserved raw files and metadata under `evidence/raw/`, with the working copy under the local
+  `data/rhine_ruhr/raw/` directory.

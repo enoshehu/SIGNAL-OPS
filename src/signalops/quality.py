@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-import hashlib
-import json
+from itertools import pairwise
 from pathlib import Path
-import sqlite3
 
 from signalops.catalog import DatasetDefinition
 from signalops.storage import SQLiteRecordStore
-
 
 QUALITY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS quality_runs (
@@ -58,8 +58,14 @@ def assess(
         connection.executescript(QUALITY_SCHEMA)
         rules = {str(rule["key"]): rule for rule in definition.quality}
         known_rules = {
-            "valid_timestamp", "humidity_range", "value_present", "unique_observation",
-            "entity_integrity", "hourly_continuity", "freshness", "schema_drift",
+            "valid_timestamp",
+            "humidity_range",
+            "value_present",
+            "unique_observation",
+            "entity_integrity",
+            "hourly_continuity",
+            "freshness",
+            "schema_drift",
         }
         unknown = sorted(set(rules) - known_rules)
         if unknown:
@@ -68,12 +74,14 @@ def assess(
         if entity_key:
             scope_key = entity_key.split(":", 1)[1]
             latest = connection.execute(
-                "SELECT MAX(id) FROM artifact_imports WHERE source = ? AND scope_key = ?",
-                (definition.adapter, scope_key),
+                "SELECT MAX(id) FROM artifact_imports "
+                "WHERE source = ? AND scope_key = ? AND stream_key = ?",
+                (definition.adapter, scope_key, definition.stream),
             ).fetchone()[0]
         else:
             latest = connection.execute(
-                "SELECT MAX(id) FROM artifact_imports WHERE source = ?", (definition.adapter,)
+                "SELECT MAX(id) FROM artifact_imports WHERE source = ? AND stream_key = ?",
+                (definition.adapter, definition.stream),
             ).fetchone()[0]
         if latest is None:
             target = entity_key or definition.adapter
@@ -99,20 +107,19 @@ def assess(
             raise ValueError(f"No canonical rows found for latest import: {latest}")
 
         results: list[QualityResult] = []
-        for key in rules:
+        for key, rule in rules.items():
             if key == "valid_timestamp":
                 affected = tuple(row[0] for row in rows if not _valid_time(row[2]))
-                results.append(_result(key, len(rows), affected, rules[key]))
+                results.append(_result(key, len(rows), affected, rule))
             elif key == "humidity_range":
                 humidity = [row for row in rows if row[3] == "relative_humidity"]
                 affected = tuple(
-                    row[0] for row in humidity
-                    if row[4] is not None and not 0 <= row[4] <= 100
+                    row[0] for row in humidity if row[4] is not None and not 0 <= row[4] <= 100
                 )
-                results.append(_result(key, len(humidity), affected, rules[key]))
+                results.append(_result(key, len(humidity), affected, rule))
             elif key == "value_present":
                 affected = tuple(row[0] for row in rows if row[4] is None)
-                results.append(_result(key, len(rows), affected, rules[key]))
+                results.append(_result(key, len(rows), affected, rule))
             elif key == "unique_observation":
                 seen: set[tuple[str, str, str]] = set()
                 affected_list: list[str] = []
@@ -121,17 +128,17 @@ def assess(
                     if grain in seen:
                         affected_list.append(row[0])
                     seen.add(grain)
-                results.append(_result(key, len(rows), tuple(affected_list), rules[key]))
+                results.append(_result(key, len(rows), tuple(affected_list), rule))
             elif key == "entity_integrity":
                 known = {row[0] for row in connection.execute("SELECT entity_key FROM entities")}
                 affected = tuple(row[0] for row in rows if row[1] not in known)
-                results.append(_result(key, len(rows), affected, rules[key]))
+                results.append(_result(key, len(rows), affected, rule))
             elif key == "hourly_continuity":
-                results.append(_hourly_continuity(rows, rules[key]))
+                results.append(_hourly_continuity(rows, rule))
             elif key == "freshness":
-                results.append(_freshness(rows, rules[key]))
+                results.append(_freshness(rows, rule))
             elif key == "schema_drift":
-                results.append(_schema_drift(connection, definition, latest, rules[key]))
+                results.append(_schema_drift(connection, definition, latest, rule))
 
         executed_at = datetime.now(UTC).isoformat()
         with connection:
@@ -145,13 +152,21 @@ def assess(
                     """INSERT INTO quality_results
                        (run_id, rule_key, status, records_checked, records_failed, details_json)
                        VALUES (?, ?, ?, ?, ?, ?)""",
-                    (run_id, item.rule, item.status, item.checked, item.failed,
-                     json.dumps(item.details, sort_keys=True)),
+                    (
+                        run_id,
+                        item.rule,
+                        item.status,
+                        item.checked,
+                        item.failed,
+                        json.dumps(item.details, sort_keys=True),
+                    ),
                 )
                 connection.executemany(
                     "INSERT INTO quality_failures(result_id, item_id, reason) VALUES (?, ?, ?)",
-                    [(result_cursor.lastrowid, item_id, str(item.details["reason"]))
-                     for item_id in item.affected_ids],
+                    [
+                        (result_cursor.lastrowid, item_id, str(item.details["reason"]))
+                        for item_id in item.affected_ids
+                    ],
                 )
         return results
 
@@ -179,23 +194,33 @@ def _freshness(rows: list[tuple], rule: dict[str, object]) -> QualityResult:
     timestamps = [datetime.fromisoformat(row[2]) for row in rows if _valid_time(row[2])]
     if not timestamps:
         return QualityResult(
-            "freshness", "failure", len(rows), len(rows),
+            "freshness",
+            "failure",
+            len(rows),
+            len(rows),
             {"max_age_minutes": max_age, "reason": "No valid timestamp is available"},
         )
     age = max(0, int((datetime.now(UTC) - max(timestamps)).total_seconds() // 60))
     failed = int(age > max_age)
     return QualityResult(
-        "freshness", "warning" if failed else "pass", len(rows), failed,
-        {"age_minutes": age, "max_age_minutes": max_age,
-         "reason": "Latest observation exceeds the configured age" if failed else
-                   "Latest observation is within the configured age"},
+        "freshness",
+        "warning" if failed else "pass",
+        len(rows),
+        failed,
+        {
+            "age_minutes": age,
+            "max_age_minutes": max_age,
+            "reason": "Latest observation exceeds the configured age"
+            if failed
+            else "Latest observation is within the configured age",
+        },
     )
 
 
 def _hourly_continuity(rows: list[tuple], rule: dict[str, object]) -> QualityResult:
     timestamps = sorted({datetime.fromisoformat(row[2]) for row in rows if _valid_time(row[2])})
     missing: list[str] = []
-    for earlier, later in zip(timestamps, timestamps[1:]):
+    for earlier, later in pairwise(timestamps):
         expected = earlier + timedelta(hours=1)
         while expected < later:
             missing.append(expected.isoformat())
@@ -260,10 +285,19 @@ def _schema_drift(
     status = "failure" if failed else ("warning" if added else "pass")
     affected = tuple(removed + changed + added)
     return QualityResult(
-        "schema_drift", status, len(schema), failed,
-        {"added": added, "removed": removed, "type_changed": changed,
-         "severity": rule.get("severity", "high"),
-         "reason": "Parsed payload schema changed" if affected else "Schema matches the baseline"},
+        "schema_drift",
+        status,
+        len(schema),
+        failed,
+        {
+            "added": added,
+            "removed": removed,
+            "type_changed": changed,
+            "severity": rule.get("severity", "high"),
+            "reason": "Parsed payload schema changed"
+            if affected
+            else "Schema matches the baseline",
+        },
         affected,
     )
 

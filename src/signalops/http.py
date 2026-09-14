@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import time
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import time
-from typing import Callable, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from signalops import __version__
 
 
 class DownloadError(RuntimeError):
@@ -34,7 +36,7 @@ class HttpClient:
         self.max_bytes = max_bytes
 
     def get(self, url: str, *, headers: Mapping[str, str], timeout: int) -> Download:
-        request = Request(url, headers={**headers, "User-Agent": "signalops/0.2"})
+        request = Request(url, headers={**headers, "User-Agent": f"signalops/{__version__}"})
         for attempt in range(2):
             try:
                 with self.opener(request, timeout=timeout) as response:

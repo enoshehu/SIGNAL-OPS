@@ -1,7 +1,9 @@
-from email.message import Message
-from urllib.error import URLError
 import unittest
+from email.message import Message
+from typing import Self
+from urllib.error import URLError
 
+from signalops import __version__
 from signalops.http import HttpClient
 
 
@@ -11,7 +13,7 @@ class FakeResponse:
         self.headers = Message()
         self.headers["Content-Type"] = "application/zip"
 
-    def __enter__(self) -> "FakeResponse":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object) -> None:
@@ -22,6 +24,18 @@ class FakeResponse:
 
 
 class HttpClientTests(unittest.TestCase):
+    def test_user_agent_tracks_package_version(self) -> None:
+        observed = ""
+
+        def opener(request: object, timeout: int) -> FakeResponse:
+            nonlocal observed
+            observed = request.get_header("User-agent")
+            return FakeResponse(b"downloaded")
+
+        HttpClient(opener=opener).get("https://example.invalid/data", headers={}, timeout=10)
+
+        self.assertEqual(observed, f"signalops/{__version__}")
+
     def test_retries_one_temporary_network_failure(self) -> None:
         calls = 0
 

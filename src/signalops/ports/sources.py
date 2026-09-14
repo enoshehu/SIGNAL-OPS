@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Protocol
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Protocol
 
-from signalops.domain import RawRecord
+from signalops.domain import RawArtifact, RawRecord
 
 
 class SourceAdapter(Protocol):
     name: str
 
-    def fetch(self) -> Iterable[RawRecord]: ...
+    def download(self) -> RawArtifact: ...
+
+    def parse(self, artifact: RawArtifact) -> Iterable[RawRecord]: ...
 
 
-class RecordSink(Protocol):
-    def write(self, records: Iterable[RawRecord]) -> int: ...
+class RawArtifactStore(Protocol):
+    def save(self, artifact: RawArtifact) -> Path: ...

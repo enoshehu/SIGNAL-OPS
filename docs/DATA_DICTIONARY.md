@@ -5,7 +5,7 @@
 | Table | Grain | Purpose |
 |---|---|---|
 | `sources` | one source | Publisher, licence, and source URL |
-| `datasets` | one dataset | Adapter, entity type, and planned refresh |
+| `datasets` | one dataset and source stream | Adapter, stream, entity type, and refresh plan |
 | `entities` | one station | Rail or weather station with city metadata |
 | `observations` | station × timestamp × metric × import | Temperature and humidity values |
 | `service_events` | station × stop × arrival/departure × import | Planned or changed railway event snapshots |

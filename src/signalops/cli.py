@@ -3,20 +3,22 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sqlite3
 from dataclasses import replace
 from datetime import datetime
-import os
 from pathlib import Path
-import sqlite3
 from zoneinfo import ZoneInfo
 
 from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter, RawFileStore
-from signalops.config import ConfigurationError, load_settings
+from signalops.analysis import export_hourly_csv
 from signalops.catalog import load_catalog
+from signalops.config import ConfigurationError, load_settings
+from signalops.pipeline import IngestionPipeline
+from signalops.operations import run_operational_cycle
+from signalops.quality import assess
 from signalops.storage import SQLiteRecordStore
 from signalops.universal import normalize
-from signalops.quality import assess
-from signalops.analysis import export_hourly_csv
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,25 +31,35 @@ def build_parser() -> argparse.ArgumentParser:
     ingest.add_argument("--source", choices=("dwd", "db"), required=True)
     ingest.add_argument("--city", help="city profile; default is configured in base.toml")
     ingest.add_argument("--config", type=Path, default=default_config)
-    ingest.add_argument("--dry-run", action="store_true", help="show the request without sending it")
-    ingest.add_argument("--at", help="DB plan hour in ISO format, for example 2026-09-14T10:00:00+00:00")
     ingest.add_argument(
-        "--db-feed", choices=("plan", "changes"), default="plan",
+        "--dry-run", action="store_true", help="show the request without sending it"
+    )
+    ingest.add_argument(
+        "--at", help="DB plan hour in ISO format, for example 2026-09-14T10:00:00+00:00"
+    )
+    ingest.add_argument(
+        "--db-feed",
+        choices=("plan", "changes"),
+        default="plan",
         help="DB timetable feed; changes uses the current full-change endpoint",
     )
     replay = subparsers.add_parser("replay", help="verify and load one saved raw artifact")
     replay.add_argument("path", type=Path)
     replay.add_argument("--config", type=Path, default=default_config)
     normal = subparsers.add_parser("normalize", help="build canonical observations or events")
-    normal.add_argument("--dataset", choices=("dwd_weather", "db_timetables"), required=True)
+    normal.add_argument("--dataset", required=True)
     normal.add_argument("--config", type=Path, default=default_config)
     quality = subparsers.add_parser("quality", help="run configured data-quality checks")
-    quality.add_argument("--dataset", choices=("dwd_weather", "db_timetables"), required=True)
+    quality.add_argument("--dataset", required=True)
     quality.add_argument("--city", help="run checks for one city profile")
     quality.add_argument("--config", type=Path, default=default_config)
     analysis = subparsers.add_parser("analyze", help="export the city-hour analysis table")
     analysis.add_argument("--config", type=Path, default=default_config)
     analysis.add_argument("--output", type=Path)
+    operate = subparsers.add_parser(
+        "operate", help="detect rail signals and open duplicate-safe local incidents"
+    )
+    operate.add_argument("--config", type=Path, default=default_config)
     return parser
 
 
@@ -116,19 +128,12 @@ def main(argv: list[str] | None = None) -> int:
             print("Dry run: no request sent and no file written.")
             return 0
         try:
-            artifact = adapter.download()
-            target = RawFileStore(settings.data_dir).save(artifact)
-        except (RuntimeError, ValueError) as exc:
+            result = IngestionPipeline(RawFileStore(settings.data_dir)).run(adapter)
+        except (OSError, RuntimeError, ValueError) as exc:
             print(f"Ingestion failed: {exc}")
             return 2
-        try:
-            record_count = sum(1 for _ in adapter.parse(artifact))
-        except ValueError as exc:
-            print(f"Raw file saved: {target}")
-            print(f"Parsing failed: {exc}")
-            return 2
-        print(f"saved: {target}")
-        print(f"parsed records: {record_count}")
+        print(f"saved: {result.artifact_path}")
+        print(f"parsed records: {result.records_parsed}")
         return 0
     if args.command == "replay":
         try:
@@ -175,7 +180,8 @@ def main(argv: list[str] | None = None) -> int:
             city = settings.city(args.city)
             scope = city.dwd_station_id if definition.adapter == "dwd" else city.db_eva_number
             results = assess(
-                settings.data_dir / "signalops.sqlite", definition,
+                settings.data_dir / "signalops.sqlite",
+                definition,
                 entity_key=f"{definition.adapter}:{scope}",
             )
         except (OSError, KeyError, RuntimeError, ValueError, sqlite3.Error) as exc:
@@ -197,5 +203,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"database: {database_path}")
         print(f"output: {output}")
         print(f"city-hour rows: {row_count}")
+        return 0
+    if args.command == "operate":
+        try:
+            settings = load_settings(args.config)
+            database_path = settings.data_dir / "signalops.sqlite"
+            detected, opened = run_operational_cycle(database_path)
+        except (OSError, RuntimeError, ValueError, sqlite3.Error) as exc:
+            print(f"Operational cycle failed: {exc}")
+            return 2
+        print(f"signals detected: {detected}")
+        print(f"new incidents opened: {opened}")
         return 0
     return 1

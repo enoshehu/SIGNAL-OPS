@@ -1,9 +1,9 @@
-from datetime import UTC, datetime
-from contextlib import closing
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import sqlite3
 import unittest
+from contextlib import closing
+from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from signalops.domain import RawArtifact, RawRecord
 from signalops.storage import SQLiteRecordStore
@@ -17,8 +17,11 @@ def sample_artifact(checksum: str = "abc123") -> RawArtifact:
         datetime(2026, 9, 14, tzinfo=UTC),
         b"content",
         "application/zip",
-        {"source_url": "https://example.invalid/weather", "sha256": checksum,
-         "station_id": "01303"},
+        {
+            "source_url": "https://example.invalid/weather",
+            "sha256": checksum,
+            "station_id": "01303",
+        },
     )
 
 
@@ -33,6 +36,48 @@ def sample_record(artifact: RawArtifact) -> RawRecord:
 
 
 class SQLiteRecordStoreTests(unittest.TestCase):
+    def test_same_bytes_are_separate_for_plan_and_change_streams(self) -> None:
+        plan = RawArtifact(
+            "db",
+            "plan",
+            "plan.xml",
+            datetime(2026, 9, 14, tzinfo=UTC),
+            b"same",
+            "application/xml",
+            {
+                "source_url": "https://example.invalid",
+                "sha256": "same",
+                "station_eva": "8000098",
+                "feed": "plan",
+            },
+        )
+        changes = RawArtifact(
+            "db",
+            "changes",
+            "changes.xml",
+            plan.retrieved_at,
+            b"same",
+            "application/xml",
+            {**plan.provenance, "feed": "changes"},
+        )
+        record = RawRecord(
+            "db",
+            "stop",
+            plan.retrieved_at,
+            {"station_eva": "8000098"},
+            {"source_url": "https://example.invalid"},
+        )
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with SQLiteRecordStore(database) as store:
+                store.store(plan, Path("plan.xml"), [record])
+                store.store(changes, Path("changes.xml"), [record])
+            with closing(sqlite3.connect(database)) as connection:
+                streams = connection.execute(
+                    "SELECT stream_key FROM artifact_imports ORDER BY stream_key"
+                ).fetchall()
+        self.assertEqual(streams, [("changes",), ("plan",)])
+
     def test_replay_is_idempotent_and_records_artifact(self) -> None:
         artifact = sample_artifact()
         records = [sample_record(artifact)]
@@ -45,7 +90,9 @@ class SQLiteRecordStoreTests(unittest.TestCase):
             self.assertEqual(first.records_inserted, 1)
             self.assertEqual(second.records_inserted, 0)
             with closing(sqlite3.connect(database)) as connection, connection:
-                import_count = connection.execute("SELECT COUNT(*) FROM artifact_imports").fetchone()[0]
+                import_count = connection.execute(
+                    "SELECT COUNT(*) FROM artifact_imports"
+                ).fetchone()[0]
                 record_count = connection.execute(
                     "SELECT COUNT(*) FROM parsed_raw_records"
                 ).fetchone()[0]
@@ -67,8 +114,13 @@ class SQLiteRecordStoreTests(unittest.TestCase):
     def test_same_bytes_are_separate_for_different_stations(self) -> None:
         first = sample_artifact("same")
         second = RawArtifact(
-            first.source, first.external_id, first.filename, first.retrieved_at, first.content,
-            first.content_type, {**first.provenance, "station_id": "13670"},
+            first.source,
+            first.external_id,
+            first.filename,
+            first.retrieved_at,
+            first.content,
+            first.content_type,
+            {**first.provenance, "station_id": "13670"},
         )
         with TemporaryDirectory() as directory:
             database = Path(directory) / "signalops.sqlite"
@@ -86,9 +138,8 @@ class SQLiteRecordStoreTests(unittest.TestCase):
         record = sample_record(artifact)
         with TemporaryDirectory() as directory:
             database = Path(directory) / "signalops.sqlite"
-            with SQLiteRecordStore(database) as store:
-                with self.assertRaises(sqlite3.IntegrityError):
-                    store.store(artifact, Path("weather.zip"), [record, record])
+            with SQLiteRecordStore(database) as store, self.assertRaises(sqlite3.IntegrityError):
+                store.store(artifact, Path("weather.zip"), [record, record])
             with closing(sqlite3.connect(database)) as connection, connection:
                 count = connection.execute("SELECT COUNT(*) FROM artifact_imports").fetchone()[0]
             self.assertEqual(count, 0)
@@ -121,10 +172,14 @@ class SQLiteRecordStoreTests(unittest.TestCase):
                 scope = connection.execute(
                     "SELECT scope_key FROM artifact_imports WHERE id = 1"
                 ).fetchone()[0]
+                stream = connection.execute(
+                    "SELECT stream_key FROM artifact_imports WHERE id = 1"
+                ).fetchone()[0]
                 parent = connection.execute(
                     "PRAGMA foreign_key_list(parsed_raw_records)"
                 ).fetchone()[2]
                 violations = connection.execute("PRAGMA foreign_key_check").fetchall()
             self.assertEqual(scope, "01303")
+            self.assertEqual(stream, "observations")
             self.assertEqual(parent, "artifact_imports")
             self.assertEqual(violations, [])

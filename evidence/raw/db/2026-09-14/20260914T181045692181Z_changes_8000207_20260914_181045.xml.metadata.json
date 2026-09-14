@@ -1,0 +1,15 @@
+{
+  "byte_count": 605704,
+  "content_type": "application/xml",
+  "external_id": "changes-8000207-20260914181045",
+  "filename": "changes_8000207_20260914_181045.xml",
+  "provenance": {
+    "feed": "changes",
+    "source_url": "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/8000207",
+    "station_eva": "8000207"
+  },
+  "retrieved_at": "2026-09-14T18:10:45.692181+00:00",
+  "sha256": "6283076da935b8f686d2b2ebb51673d0f2466c00364dc64e7eaa45564c260070",
+  "source": "db",
+  "source_url": "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/8000207"
+}

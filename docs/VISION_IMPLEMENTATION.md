@@ -29,7 +29,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |
-| Scheduled collection | Configured | Six-hour workflow with cached SQLite and 30-day raw artifacts |
+| Scheduled collection | Configured | Runs every six hours after the two DB repository secrets are added; otherwise Pages uses the committed evidence |
 | SMARD, UBA and Destatis missions | Planned | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

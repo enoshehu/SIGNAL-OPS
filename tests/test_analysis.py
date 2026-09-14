@@ -67,3 +67,33 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(export_hourly_csv(database, output), 0)
             with output.open(encoding="utf-8", newline="") as handle:
                 self.assertEqual(tuple(next(csv.reader(handle))), COLUMNS)
+
+    def test_keeps_separate_plan_hours_and_merges_only_matching_changes(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with closing(sqlite3.connect(database)) as connection, connection:
+                connection.executescript(SCHEMA)
+                connection.execute(
+                    "INSERT INTO entities VALUES (?, ?, ?, NULL, NULL, ?)",
+                    ("db:8000098", "rail_station", "Essen Hbf", json.dumps({"city": "essen"})),
+                )
+                connection.executemany(
+                    "INSERT INTO service_events VALUES (?, 'db_timetables', 'db:8000098', ?, ?, "
+                    "'departure', ?, ?, ?, '{}')",
+                    [
+                        ("plan-1", 1, "stop-1", "2026-09-14T17:20:00+00:00", None, "planned"),
+                        ("plan-2", 2, "stop-2", "2026-09-14T18:20:00+00:00", None, "planned"),
+                        ("change-1", 3, "stop-1", None, "2026-09-14T17:30:00+00:00", "changed"),
+                        ("change-2", 3, "stop-2", None, "2026-09-14T18:20:00+00:00", "cancelled"),
+                        ("unmatched", 3, "stop-3", None, "2026-09-14T19:00:00+00:00", "changed"),
+                    ],
+                )
+
+            rows = hourly_summary(database)
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["planned_events"], 1)
+        self.assertEqual(rows[0]["matched_change_events"], 1)
+        self.assertEqual(rows[0]["delayed_events"], 1)
+        self.assertEqual(rows[0]["average_delay_minutes"], 10.0)
+        self.assertEqual(rows[1]["cancelled_events"], 1)

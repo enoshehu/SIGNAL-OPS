@@ -391,3 +391,34 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
 - The export has 52,807 city-hour rows and zero paired hours. DWD ends at
   `2026-09-13T23:00:00+00:00`; the DB plan slice begins on 2026-09-14.
 - No relationship or operational-performance claim is made from this non-overlapping snapshot.
+
+### Sprint 6 compatibility fix: direct quality runs
+
+- A reported quality run against the earlier SQLite file failed because station scoping had been
+  added after that file was created.
+- Quality assessment now prepares and migrates storage before querying `scope_key`; users do not
+  need to replay or delete existing data.
+- The base configuration now points to the active Rhine–Ruhr database so its default Essen city
+  and default data are consistent. The historical Berlin database remains opt-in.
+- The migration uses one atomic parent-table replacement, checks foreign-key integrity, and always
+  restores foreign-key enforcement.
+- A regression test covers the exact quality-on-old-database path. The full offline suite passes
+  36 tests.
+
+### Sprint 6 DB full-change slice
+
+- Added a small `--db-feed changes` option for DB `GET /fchg/{eva}` requests; plan behavior remains
+  the default.
+- Preserved four live full-change XML snapshots: 2,599 raw stop updates and 3,564 normalized
+  arrival/departure event updates.
+- Reconciled plan and change snapshots by station, DB stop ID, and event type. The plan slice has
+  331 matched events; extra changes without a saved plan are excluded from delay metrics.
+- Fixed the city-hour query so each stable plan event survives later hourly imports and full-change
+  imports. It no longer assumes that the newest station import replaces every earlier plan hour.
+- Added matched-change, cancellation, positive-delay, mean-delay, and maximum-delay fields to the
+  export. These remain descriptive fields, not production KPIs.
+- The four DB change timestamp checks found 78 updates without a usable time. The results are kept
+  as failures rather than hidden.
+- Rechecked the four official DWD archives; all still end at `2026-09-13T23:00:00+00:00`, so paired
+  analysis remains blocked.
+- Added four focused regression tests. The full offline suite now passes 40 tests.

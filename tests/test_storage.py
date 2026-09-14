@@ -105,7 +105,8 @@ class SQLiteRecordStoreTests(unittest.TestCase):
                       record_count INTEGER, UNIQUE(source, artifact_sha256)
                     );
                     CREATE TABLE parsed_raw_records (
-                      import_id INTEGER, external_id TEXT, payload_json TEXT,
+                      import_id INTEGER REFERENCES artifact_imports(id),
+                      external_id TEXT, payload_json TEXT,
                       provenance_json TEXT, PRIMARY KEY(import_id, external_id)
                     );
                     INSERT INTO artifact_imports VALUES
@@ -120,4 +121,10 @@ class SQLiteRecordStoreTests(unittest.TestCase):
                 scope = connection.execute(
                     "SELECT scope_key FROM artifact_imports WHERE id = 1"
                 ).fetchone()[0]
+                parent = connection.execute(
+                    "PRAGMA foreign_key_list(parsed_raw_records)"
+                ).fetchone()[2]
+                violations = connection.execute("PRAGMA foreign_key_check").fetchall()
             self.assertEqual(scope, "01303")
+            self.assertEqual(parent, "artifact_imports")
+            self.assertEqual(violations, [])

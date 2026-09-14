@@ -76,7 +76,8 @@ def assess(
                 "SELECT MAX(id) FROM artifact_imports WHERE source = ?", (definition.adapter,)
             ).fetchone()[0]
         if latest is None:
-            raise ValueError(f"No imported data found for source: {definition.adapter}")
+            target = entity_key or definition.adapter
+            raise ValueError(f"No imported data found for scope: {target}")
 
         if definition.adapter == "dwd":
             sql = (
@@ -85,7 +86,8 @@ def assess(
             )
         else:
             sql = (
-                "SELECT event_id, entity_key, planned_at, event_type, NULL FROM service_events "
+                "SELECT event_id, entity_key, COALESCE(planned_at, changed_at), "
+                "event_type, NULL FROM service_events "
                 "WHERE dataset_key = ? AND import_id = ?"
             )
         parameters: tuple[object, ...] = (definition.key, latest)

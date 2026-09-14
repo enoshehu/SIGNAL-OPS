@@ -35,7 +35,7 @@ flowchart LR
 
 | Milestone | Sprints | Outcome | Status |
 |---|---:|---|---|
-| M1 — Trustworthy foundation | 1–2 | Tested architecture and first reproducible source pulls | In progress |
+| M1 — Trustworthy foundation | 1–2 | Tested architecture and first reproducible source pulls | Complete |
 | M2 — Governed data product | 3–5 | Durable layers, shared model, and evidence-backed quality rules | Complete for DWD |
 | M3 — Operational insight | 6–7 | Joined Weather × Rail analysis and incident workflow | Planned |
 | M4 — Recruiter-ready product | 8–10 | Usable reporting, automation, documentation, and demo narrative | Planned |
@@ -111,16 +111,17 @@ the second; SQLite retained one artifact import and 13,200 records.
 - [x] Define source, dataset, station entity, observation, and service-event tables.
 - [x] Preserve source payloads alongside normalized values and units.
 - [x] Standardize DWD observation timestamps in UTC.
-- [ ] Resolve DWD and rail locations using a documented spatial matching rule.
+- [x] Resolve DWD and rail locations using a documented city-proxy matching rule.
 - [x] Link canonical rows to dataset, entity, and artifact import IDs.
 - [x] Add unit, boundary, and representative fixture tests.
-- [ ] Publish a data dictionary and example lineage trace.
+- [x] Publish a data dictionary.
+- [ ] Publish an example lineage trace.
 
 **Exit gate:** a reviewer can trace every curated value back to its raw source and transformation.
 
 ## Sprint 5 — Data-quality and trust layer
 
-**Status:** ✅ Complete for DWD; DB live evidence pending  
+**Status:** ✅ Complete for DWD; DB timestamp rule verified on live data
 **Record:** [Sprint 5 — Data quality and schema drift](sprints/SPRINT-05-DATA-QUALITY.md)  
 **Objective:** Detect and explain whether the data is fit for analysis.
 
@@ -131,7 +132,7 @@ the second; SQLite retained one artifact import and 13,200 records.
 - [x] Add parsed-schema drift and stale-observation detection.
 - [x] Review trust scoring and deliberately omit an unjustified numeric formula.
 - [x] Add tests for known bad data and boundary conditions.
-- [ ] Verify DB quality behavior with a real permitted timetable artifact.
+- [x] Verify DB timestamp quality behavior with real permitted timetable artifacts.
 
 **Exit evidence:** the real DWD import has eight inspectable rule results and 73 linked affected
 record identifiers; no unsupported quality percentage is presented as fact.
@@ -153,10 +154,13 @@ record identifiers; no unsupported quality percentage is presented as fact.
 - [x] Run quality checks separately by source and city.
 - [x] Define the city-hour grain and exact UTC-hour matching rule.
 - [x] Export unmatched source-hours without converting missing rail data to zero.
+- [x] Ingest DB full-change snapshots for all four cities.
+- [x] Match plan and change events without dropping earlier plan hours.
+- [x] Derive delays and cancellations only for matched events.
 - [ ] Collect an overlapping date before calculating Weather × Railway results.
-- [ ] Define the final analytical question and evaluation window before calculating results.
-- [ ] Establish baselines and comparison groups.
-- [ ] Join sources with documented spatial and temporal tolerances.
+- [x] Define the final analytical question and evaluation-window rule before calculating results.
+- [x] Establish the baseline and comparison-group design without calculating results early.
+- [x] Join sources with documented spatial and temporal rules.
 - [ ] Explore missingness, coverage, outliers, and selection bias.
 - [ ] Calculate only metrics supported by retrieved data.
 - [ ] Separate association from causal interpretation.

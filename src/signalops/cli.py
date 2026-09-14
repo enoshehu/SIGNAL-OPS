@@ -31,6 +31,10 @@ def build_parser() -> argparse.ArgumentParser:
     ingest.add_argument("--config", type=Path, default=default_config)
     ingest.add_argument("--dry-run", action="store_true", help="show the request without sending it")
     ingest.add_argument("--at", help="DB plan hour in ISO format, for example 2026-09-14T10:00:00+00:00")
+    ingest.add_argument(
+        "--db-feed", choices=("plan", "changes"), default="plan",
+        help="DB timetable feed; changes uses the current full-change endpoint",
+    )
     replay = subparsers.add_parser("replay", help="verify and load one saved raw artifact")
     replay.add_argument("path", type=Path)
     replay.add_argument("--config", type=Path, default=default_config)
@@ -101,7 +105,9 @@ def main(argv: list[str] | None = None) -> int:
         adapter = (
             DWDOpenDataAdapter(dwd_settings)
             if args.source == "dwd"
-            else DeutscheBahnTimetablesAdapter(db_settings, requested_at=requested_at)
+            else DeutscheBahnTimetablesAdapter(
+                db_settings, requested_at=requested_at, feed=args.db_feed
+            )
         )
         print(f"city: {city.name}")
         print(f"source: {adapter.name}")

@@ -31,8 +31,22 @@ warnings for Düsseldorf and Köln.
 | Essen | 39 | 51 | 2026-09-14 17:01 to 17:59 |
 | Köln | 65 | 124 | 2026-09-14 17:00 to 17:59 |
 
-All 353 planned events passed timestamp validity. The dataset contains planned events only; it
-does not yet support claims about delays or cancellations.
+All 353 planned events passed timestamp validity. Four later full-change snapshots contained 2,599
+raw stops and 3,564 arrival/departure updates. Timestamp checks on those updates found 78 records
+without their own usable planned or changed time: Düsseldorf 18, Duisburg 38, Essen 0, and Köln 22.
+
+Plans and changes are matched on station, DB stop ID, and arrival/departure type. The saved plan
+slice has 331 matched events. Its rail-only descriptive results are:
+
+| City | Plans | Matched changes | Cancelled | Positively delayed | Mean positive delay | Maximum positive delay |
+|---|---:|---:|---:|---:|---:|---:|
+| Düsseldorf | 95 | 95 | 0 | 66 | 12.8 min | 84 min |
+| Duisburg | 83 | 61 | 0 | 47 | 19.8 min | 83 min |
+| Essen | 51 | 51 | 0 | 35 | 5.2 min | 27 min |
+| Köln | 124 | 124 | 2 | 73 | 13.3 min | 90 min |
+
+These are one-slice observations, not production KPIs or representative performance claims.
+Missing change rows are not counted as on-time, and changes without a saved plan are excluded.
 
 ## Join coverage finding
 
@@ -49,6 +63,9 @@ is high because the maximum and minimum source timestamps were checked directly.
 
 **Smallest remediation:** preserve the current DB slice, refresh the four DWD archives after they
 include 2026-09-14, replay and normalize those snapshots, then regenerate the same export.
+
+The official DWD archives were checked again on 2026-09-14 and still ended at 23:00 UTC on
+2026-09-13 for all four stations.
 
 ## Sources
 

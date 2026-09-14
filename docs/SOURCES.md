@@ -40,8 +40,10 @@ SIGNAL//OPS.
 - Published plan limit checked for Sprint 2: 60 calls per minute. SIGNAL//OPS makes one call per
   explicit DB ingestion command and implements no scheduler yet.
 - License listed by DB: CC BY 4.0.
-- Live access status: the configured application is subscribed and authenticated plan requests
-  succeed. The first two Berlin plan responses were valid but empty XML.
+- Live access status: the configured application is subscribed; authenticated `plan` and `fchg`
+  requests succeed. `fchg` is the full-change feed used for changed times and cancellations.
+- Merge note: most change events do not repeat their planned time. SIGNAL//OPS therefore matches
+  plan and change rows by station, DB stop ID, and arrival/departure type.
 
 Official references:
 

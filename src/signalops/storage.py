@@ -118,14 +118,11 @@ class SQLiteRecordStore:
     def _migrate_scope_key(self) -> None:
         self.connection.commit()
         self.connection.execute("PRAGMA foreign_keys = OFF")
-        with self.connection:
+        try:
+            self.connection.execute("BEGIN IMMEDIATE")
             self.connection.execute(
-                "ALTER TABLE parsed_raw_records RENAME TO parsed_raw_records_legacy"
-            )
-            self.connection.execute("ALTER TABLE artifact_imports RENAME TO artifact_imports_legacy")
-            self.connection.executescript(
                 """
-                CREATE TABLE artifact_imports (
+                CREATE TABLE artifact_imports_new (
                     id INTEGER PRIMARY KEY,
                     source TEXT NOT NULL,
                     scope_key TEXT NOT NULL,
@@ -135,15 +132,12 @@ class SQLiteRecordStore:
                     loaded_at TEXT NOT NULL,
                     record_count INTEGER NOT NULL,
                     UNIQUE (source, scope_key, artifact_sha256)
-                );
-                CREATE TABLE parsed_raw_records (
-                    import_id INTEGER NOT NULL REFERENCES artifact_imports(id),
-                    external_id TEXT NOT NULL,
-                    payload_json TEXT NOT NULL,
-                    provenance_json TEXT NOT NULL,
-                    PRIMARY KEY (import_id, external_id)
-                );
-                INSERT INTO artifact_imports
+                )
+                """
+            )
+            self.connection.execute(
+                """
+                INSERT INTO artifact_imports_new
                 (id, source, scope_key, artifact_sha256, artifact_path, retrieved_at, loaded_at,
                  record_count)
                 SELECT a.id, a.source,
@@ -152,19 +146,28 @@ class SQLiteRecordStore:
                              json_extract(r.payload_json, '$.station_id'),
                              json_extract(r.payload_json, '$.station_eva')
                           )
-                          FROM parsed_raw_records_legacy r
+                          FROM parsed_raw_records r
                           WHERE r.import_id = a.id LIMIT 1),
                          'legacy'
                        ),
                        a.artifact_sha256, a.artifact_path, a.retrieved_at,
                        a.loaded_at, a.record_count
-                FROM artifact_imports_legacy a;
-                INSERT INTO parsed_raw_records SELECT * FROM parsed_raw_records_legacy;
-                DROP TABLE parsed_raw_records_legacy;
-                DROP TABLE artifact_imports_legacy;
+                FROM artifact_imports a
                 """
             )
-        self.connection.execute("PRAGMA foreign_keys = ON")
+            self.connection.execute("DROP TABLE artifact_imports")
+            self.connection.execute(
+                "ALTER TABLE artifact_imports_new RENAME TO artifact_imports"
+            )
+            violations = self.connection.execute("PRAGMA foreign_key_check").fetchall()
+            if violations:
+                raise sqlite3.IntegrityError("Storage migration failed foreign-key validation")
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
+            raise
+        finally:
+            self.connection.execute("PRAGMA foreign_keys = ON")
 
     def close(self) -> None:
         self.connection.close()

@@ -12,7 +12,8 @@ Real-World Weather + Railway DataOps, developed one user-directed sprint at a ti
 Sprints 1–5 established the architecture, real DWD ingestion, replayable SQLite storage, a shared
 data model, and inspectable quality checks. Sprint 6 scopes the case study to four city profiles:
 **Duisburg, Essen, Düsseldorf, and Köln**. DB credentials and the Timetables subscription are now
-working; cross-source analysis remains intentionally unfinished until non-empty rail data exists.
+working. Planned and current railway events are now matched, but cross-source analysis remains
+unfinished until the weather archive overlaps the saved railway hour.
 
 ```mermaid
 flowchart LR
@@ -54,6 +55,9 @@ PYTHONPATH=src python3.13 -m signalops ingest --source dwd --city essen
 # DB works the same way after DB_API_CLIENT_ID and DB_API_KEY are exported
 PYTHONPATH=src python3.13 -m signalops ingest --source db --city duisburg --dry-run
 
+# Capture the current full-change feed for delay and cancellation evidence
+PYTHONPATH=src python3.13 -m signalops ingest --source db --city duisburg --db-feed changes
+
 # Verify and load a previously saved raw artifact into SQLite
 PYTHONPATH=src python3.13 -m signalops replay data/raw/dwd/YYYY-MM-DD/FILE.zip
 
@@ -61,8 +65,11 @@ PYTHONPATH=src python3.13 -m signalops replay data/raw/dwd/YYYY-MM-DD/FILE.zip
 PYTHONPATH=src python3.13 -m signalops normalize --dataset dwd_weather
 PYTHONPATH=src python3.13 -m signalops quality --dataset dwd_weather --city essen
 
-# Regional runs use their own database, separate from the historical Berlin proof
-SIGNALOPS_DATA_DIR=data/rhine_ruhr PYTHONPATH=src python3.13 -m signalops analyze
+# The default database is the active Rhine–Ruhr case study
+PYTHONPATH=src python3.13 -m signalops analyze
+
+# The earlier Berlin proof remains available through an explicit override
+SIGNALOPS_DATA_DIR=data PYTHONPATH=src python3.13 -m signalops status
 ```
 
 To use a non-default data directory or provide DB credentials, export the variables shown in
@@ -109,7 +116,8 @@ sample; Sprint 6 verified authenticated DB access and introduced the regional pr
 
 ## Current boundary
 
-The regional database now contains verified DWD observations and planned DB events for all four
-cities. Their current dates do not overlap: weather ends on 2026-09-13 while rail begins on
+The regional database now contains verified DWD observations plus planned and changed DB events
+for all four cities. The rail-only export can describe matched delays and cancellations for the
+saved slice. The source dates still do not overlap: weather ends on 2026-09-13 while rail begins on
 2026-09-14, so the export correctly reports zero paired city-hours. No weather relationship,
-delay, disruption, dashboard, or production metric is presented as complete.
+causal result, dashboard, or production metric is presented as complete.

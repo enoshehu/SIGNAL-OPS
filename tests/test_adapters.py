@@ -75,6 +75,20 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(adapter.url, "https://db.example/v1/plan/8011160/260914/10")
         self.assertEqual(http.calls[0][1], {"DB-Client-Id": "client", "DB-Api-Key": "key"})
         self.assertEqual(records[0].external_id, "stop-1")
+        self.assertEqual(records[0].payload["feed"], "plan")
+
+    def test_db_changes_feed_uses_full_changes_endpoint(self) -> None:
+        xml = b'<timetable><s id="stop-1"><dp ct="2609141012" cs="c"/></s></timetable>'
+        http = FakeHttpClient(xml, "application/xml")
+        settings = DBSettings(True, "https://db.example/v1", 30, "8000098", "client", "key")
+        adapter = DeutscheBahnTimetablesAdapter(settings, http=http, feed="changes")
+
+        artifact = adapter.download()
+        record = next(iter(adapter.parse(artifact)))
+
+        self.assertEqual(adapter.url, "https://db.example/v1/fchg/8000098")
+        self.assertEqual(artifact.provenance["feed"], "changes")
+        self.assertEqual(record.payload["feed"], "changes")
 
     def test_dwd_parser_reports_missing_columns(self) -> None:
         content = BytesIO()

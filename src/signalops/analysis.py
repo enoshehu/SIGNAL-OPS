@@ -11,6 +11,8 @@ import sqlite3
 COLUMNS = (
     "city", "hour_utc", "rail_station", "weather_station",
     "planned_arrivals", "planned_departures", "planned_events",
+    "matched_change_events", "cancelled_events", "delayed_events",
+    "average_delay_minutes", "maximum_delay_minutes",
     "air_temperature_c", "relative_humidity_pct",
     "weather_available", "rail_available", "paired",
 )
@@ -40,15 +42,36 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
       JOIN entities e ON e.entity_key = o.entity_key
       GROUP BY city, hour_utc, e.name
     ),
-    rail_imports AS (
-      SELECT entity_key, MAX(import_id) AS import_id
-      FROM service_events
-      GROUP BY entity_key
+    plan_ranked AS (
+      SELECT s.*,
+             ROW_NUMBER() OVER (
+               PARTITION BY entity_key, stop_id, event_type ORDER BY import_id DESC
+             ) AS row_number
+      FROM service_events s
+      WHERE status = 'planned'
     ),
-    latest_rail AS (
-      SELECT s.* FROM service_events s
-      JOIN rail_imports i
-        ON i.entity_key = s.entity_key AND i.import_id = s.import_id
+    plans AS (
+      SELECT * FROM plan_ranked WHERE row_number = 1
+    ),
+    change_ranked AS (
+      SELECT s.*,
+             ROW_NUMBER() OVER (
+               PARTITION BY entity_key, stop_id, event_type ORDER BY import_id DESC
+             ) AS row_number
+      FROM service_events s
+      WHERE status IN ('changed', 'cancelled')
+    ),
+    changes AS (
+      SELECT * FROM change_ranked WHERE row_number = 1
+    ),
+    merged_rail AS (
+      SELECT p.*, c.event_id AS change_event_id,
+             c.changed_at AS current_at, c.status AS change_status
+      FROM plans p
+      LEFT JOIN changes c
+        ON c.entity_key = p.entity_key
+       AND c.stop_id = p.stop_id
+       AND c.event_type = p.event_type
     ),
     rail AS (
       SELECT json_extract(e.attributes_json, '$.city') AS city,
@@ -58,8 +81,24 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
                AS planned_arrivals,
              SUM(CASE WHEN s.event_type = 'departure' THEN 1 ELSE 0 END)
                AS planned_departures,
-             COUNT(*) AS planned_events
-      FROM latest_rail s
+             COUNT(*) AS planned_events,
+             SUM(CASE WHEN s.change_event_id IS NOT NULL THEN 1 ELSE 0 END)
+               AS matched_change_events,
+             SUM(CASE WHEN s.change_status = 'cancelled' THEN 1 ELSE 0 END)
+               AS cancelled_events,
+             SUM(CASE WHEN s.change_status != 'cancelled'
+                            AND s.current_at IS NOT NULL
+                            AND julianday(s.current_at) > julianday(s.planned_at)
+                      THEN 1 ELSE 0 END) AS delayed_events,
+             ROUND(AVG(CASE WHEN s.change_status != 'cancelled'
+                                  AND julianday(s.current_at) > julianday(s.planned_at)
+                            THEN (julianday(s.current_at) - julianday(s.planned_at)) * 1440
+                       END), 1) AS average_delay_minutes,
+             ROUND(MAX(CASE WHEN s.change_status != 'cancelled'
+                                  AND julianday(s.current_at) > julianday(s.planned_at)
+                            THEN (julianday(s.current_at) - julianday(s.planned_at)) * 1440
+                       END), 1) AS maximum_delay_minutes
+      FROM merged_rail s
       JOIN entities e ON e.entity_key = s.entity_key
       WHERE s.planned_at IS NOT NULL
       GROUP BY city, hour_utc, e.name
@@ -71,6 +110,8 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
     )
     SELECT h.city, h.hour_utc, r.rail_station, w.weather_station,
            r.planned_arrivals, r.planned_departures, r.planned_events,
+           r.matched_change_events, r.cancelled_events, r.delayed_events,
+           r.average_delay_minutes, r.maximum_delay_minutes,
            w.air_temperature_c, w.relative_humidity_pct,
            CASE WHEN w.city IS NULL THEN 0 ELSE 1 END AS weather_available,
            CASE WHEN r.city IS NULL THEN 0 ELSE 1 END AS rail_available,

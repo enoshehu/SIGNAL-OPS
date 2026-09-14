@@ -68,6 +68,17 @@ class CliTests(unittest.TestCase):
         self.assertIn("city: Köln", output.getvalue())
         self.assertIn("/plan/8000207/260914/10", output.getvalue())
 
+    def test_db_changes_dry_run_uses_full_changes_endpoint(self) -> None:
+        output = StringIO()
+        environment = {"DB_API_CLIENT_ID": "client", "DB_API_KEY": "key"}
+        with patch.dict("os.environ", environment, clear=False), redirect_stdout(output):
+            result = main([
+                "ingest", "--source", "db", "--city", "essen",
+                "--db-feed", "changes", "--dry-run",
+            ])
+        self.assertEqual(result, 0)
+        self.assertIn("/fchg/8000098", output.getvalue())
+
     def test_unknown_city_has_clear_error(self) -> None:
         with redirect_stdout(StringIO()):
             result = main(["ingest", "--source", "dwd", "--city", "berlin", "--dry-run"])

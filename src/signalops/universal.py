@@ -124,12 +124,19 @@ def _rail(connection: sqlite3.Connection, definition: DatasetDefinition, rows: l
             if event is None:
                 continue
             planned = _db_time(event.attrib.get("pt"))
+            changed = _db_time(event.attrib.get("ct"))
+            feed = payload.get("feed", "plan")
+            if feed == "changes":
+                status = "cancelled" if event.attrib.get("cs") == "c" else "changed"
+            else:
+                status = "planned"
+                changed = None
             event_id = f"{definition.key}:{import_id}:{stop_id}:{event_type}"
             cursor = connection.execute(
                 "INSERT OR IGNORE INTO service_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     event_id, definition.key, entity_key, import_id, stop_id, event_type,
-                    planned, None, "planned", payload_json,
+                    planned, changed, status, payload_json,
                 ),
             )
             inserted += cursor.rowcount

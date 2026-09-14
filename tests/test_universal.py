@@ -81,3 +81,31 @@ class UniversalModelTests(unittest.TestCase):
                 rows,
                 [("stop-duisburg", "db:8000086"), ("stop-essen", "db:8000098")],
             )
+
+    def test_rail_change_keeps_changed_time_and_cancellation(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            payload = json.dumps({
+                "station_eva": "8000098", "feed": "changes",
+                "raw_xml": '<s id="stop-essen"><dp ct="2609141025" cs="c" /></s>',
+            })
+            with closing(sqlite3.connect(database)) as connection:
+                connection.executescript(
+                    """
+                    CREATE TABLE artifact_imports (id INTEGER PRIMARY KEY, source TEXT);
+                    CREATE TABLE parsed_raw_records
+                    (import_id INTEGER, external_id TEXT, payload_json TEXT, provenance_json TEXT);
+                    INSERT INTO artifact_imports VALUES (1, 'db');
+                    """
+                )
+                connection.execute(
+                    "INSERT INTO parsed_raw_records VALUES (1, 'stop-essen', ?, '{}')", (payload,)
+                )
+                connection.commit()
+            definition = load_catalog(Path("config/datasets"))["db_timetables"]
+            self.assertEqual(normalize(database, definition), 1)
+            with closing(sqlite3.connect(database)) as connection:
+                row = connection.execute(
+                    "SELECT planned_at, changed_at, status FROM service_events"
+                ).fetchone()
+            self.assertEqual(row, (None, "2026-09-14T08:25:00+00:00", "cancelled"))

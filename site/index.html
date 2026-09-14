@@ -1,86 +1,169 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="day">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="SIGNAL OPS Rhine-Ruhr weather and railway operations dashboard">
-  <title>SIGNAL//OPS — Rhine–Ruhr</title>
+  <meta name="description" content="SIGNAL OPS — an evidence-first Rhine–Ruhr weather and railway operations dashboard">
+  <meta name="theme-color" content="#e8e3d6">
+  <title>SIGNAL//OPS — Ruhr Signal Lab</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="signal-line" aria-hidden="true"></div>
+  <a class="skip-link" href="#overview">Skip to dashboard</a>
+  <div class="signal-line" aria-hidden="true"><i></i><i></i><i></i></div>
+
   <header class="masthead">
-    <a class="brand" href="#top" aria-label="SIGNAL OPS home"><span>SIGNAL</span><b>//</b><span>OPS</span></a>
-    <p>Rhine–Ruhr field report <span id="generated">loading</span></p>
+    <a class="brand" href="#overview" aria-label="SIGNAL OPS home">
+      <span class="brand-mark" aria-hidden="true">S//O</span>
+      <span><b>SIGNAL</b><small>Ruhr Signal Lab</small></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#cities">Cities</a>
+      <a href="#systems">Systems</a>
+      <a href="#method">Method</a>
+      <a href="https://github.com/enoshehu/SIGNAL-OPS">GitHub</a>
+    </nav>
+    <button class="shift-toggle" id="theme-toggle" type="button" aria-label="Switch to night shift" aria-pressed="false">
+      <span aria-hidden="true">◐</span><b>Night shift</b>
+    </button>
   </header>
 
-  <main id="top">
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Rhine–Ruhr · four cities</p>
-        <h1>Weather and rail.<br><em>Gaps included.</em></h1>
-        <p class="lede">DWD observations and Deutsche Bahn timetable updates in one reproducible dataset.</p>
+  <main id="overview">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy reveal">
+        <p class="eyebrow"><span class="status-dot"></span>Rhine–Ruhr operations / four cities</p>
+        <h1 id="page-title">Two systems.<br><em>One city signal.</em></h1>
+        <p class="lede">Weather observations and railway movement are kept separate, matched honestly, and joined only when city and UTC hour agree.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#cities">Read the network</a>
+          <a class="button button-ghost" href="#method">Inspect the method <span aria-hidden="true">↘</span></a>
+        </div>
       </div>
-      <aside class="status-card">
-        <span>Project state</span>
+
+      <aside class="control-panel reveal" aria-label="Current project state">
+        <div class="panel-topline"><span>Live project state</span><i aria-hidden="true"></i></div>
         <strong id="project-status">Loading</strong>
-        <small><b id="paired-hours">—</b> paired city-hours</small>
+        <div class="control-reading">
+          <span id="paired-hours">—</span>
+          <small>paired city-hours</small>
+        </div>
+        <dl>
+          <div><dt>Generated</dt><dd id="generated">loading</dd></div>
+          <div><dt>Mode</dt><dd>Evidence first</dd></div>
+        </dl>
       </aside>
     </section>
 
-    <section class="notice" aria-live="polite">
-      <span>Current limitation</span>
+    <section class="route-section reveal" aria-labelledby="network-title">
+      <div class="route-head">
+        <p class="kicker">The corridor</p>
+        <h2 id="network-title">A four-city evidence line</h2>
+        <span class="route-legend"><i></i> Selected population</span>
+      </div>
+      <div class="route-map" id="route-map" aria-label="Rhine–Ruhr city route">
+        <div class="route-track" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="limitation reveal" aria-live="polite">
+      <div class="limitation-code"><span aria-hidden="true">!</span> Coverage notice</div>
       <p id="notice-text">Loading source coverage…</p>
+      <a href="#systems">See the join</a>
     </section>
 
-    <section class="section-grid">
-      <div>
-        <p class="section-number">01 / RAIL SNAPSHOT</p>
-        <h2>Saved railway snapshot</h2>
-      </div>
-      <div class="controls">
-        <label for="city-select">City</label>
-        <select id="city-select"><option value="all">All cities</option></select>
-      </div>
-    </section>
-
-    <section class="metric-strip" id="metrics" aria-label="Railway metrics"></section>
-
-    <section class="comparison">
-      <div class="chart-panel">
-        <div class="panel-heading"><h3>Positive delays</h3><span>share of planned events</span></div>
-        <div id="delay-chart" class="bars"></div>
-      </div>
-      <div class="table-panel">
-        <div class="panel-heading"><h3>City detail</h3><span>one observed slice</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Mean +delay</th><th>Max</th></tr></thead>
-            <tbody id="city-table"></tbody>
-          </table>
+    <section class="operations" id="cities" aria-labelledby="operations-title">
+      <div class="section-heading reveal">
+        <div><p class="section-number">01 / Railway operations</p><h2 id="operations-title">Saved movement,<br>without guesswork.</h2></div>
+        <div class="controls">
+          <label for="city-select">Filter the whole view</label>
+          <div class="select-wrap"><select id="city-select"><option value="all">All four cities</option></select></div>
         </div>
       </div>
-    </section>
 
-    <section class="sources-section">
-      <div>
-        <p class="section-number">02 / SOURCE COVERAGE</p>
-        <h2>Available data and missing overlap</h2>
+      <section class="metric-strip reveal" id="metrics" aria-label="Railway metrics"></section>
+
+      <div class="comparison reveal">
+        <section class="chart-panel" aria-labelledby="delay-title">
+          <div class="panel-heading">
+            <div><span class="panel-index">A</span><h3 id="delay-title">Positive delay share</h3></div>
+            <span>Delayed ÷ planned</span>
+          </div>
+          <div id="delay-chart" class="bars"></div>
+        </section>
+        <section class="table-panel" aria-labelledby="detail-title">
+          <div class="panel-heading">
+            <div><span class="panel-index">B</span><h3 id="detail-title">City detail</h3></div>
+            <span>One retained slice</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Mean +delay</th><th>Maximum</th></tr></thead>
+              <tbody id="city-table"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
-      <div id="source-list" class="source-list"></div>
     </section>
 
-    <section class="method">
-      <p class="section-number">03 / METHOD</p>
-      <div class="method-grid">
-        <h2>Same city.<br>Same UTC hour.</h2>
-        <p>Railway plans and changes are matched by station, stop ID, and arrival or departure type. Weather stations are city-area proxies. Unmatched records remain visible instead of becoming zero.</p>
+    <section class="systems" id="systems" aria-labelledby="systems-title">
+      <div class="section-heading reveal">
+        <div><p class="section-number">02 / Two systems, one city</p><h2 id="systems-title">The join is the story.</h2></div>
+        <p class="section-intro">Rail and weather retain their own evidence. A relationship appears only after both arrive in the same city-hour window.</p>
+      </div>
+
+      <div class="convergence reveal">
+        <article class="system-card weather-card">
+          <div class="system-icon" aria-hidden="true">≈</div>
+          <p>DWD / atmosphere</p>
+          <h3>Weather station</h3>
+          <span class="system-state"><i></i> Source ready</span>
+          <small>City-area proxy · hourly observations</small>
+        </article>
+
+        <div class="join-core" id="join-core">
+          <span class="join-line left" aria-hidden="true"></span>
+          <div class="join-node"><b id="join-symbol">×</b><small>City + UTC hour</small></div>
+          <span class="join-line right" aria-hidden="true"></span>
+          <p id="join-state">Awaiting overlap</p>
+        </div>
+
+        <article class="system-card rail-card">
+          <div class="system-icon" aria-hidden="true">⇥</div>
+          <p>DB / movement</p>
+          <h3>Railway station</h3>
+          <span class="system-state"><i></i> Source ready</span>
+          <small>Plans + changes · matched by stop event</small>
+        </article>
+      </div>
+
+      <div class="source-grid reveal" id="source-list"></div>
+    </section>
+
+    <section class="method" id="method" aria-labelledby="method-title">
+      <div class="method-header reveal">
+        <p class="section-number">03 / Evidence protocol</p>
+        <h2 id="method-title">Nothing missing<br>becomes zero.</h2>
+      </div>
+      <div class="method-steps reveal">
+        <article><span>01</span><h3>Retain</h3><p>Original source bytes and metadata remain available for reproducible review.</p></article>
+        <article><span>02</span><h3>Normalize</h3><p>Weather and railway events enter a shared city-and-time model without losing their source identity.</p></article>
+        <article><span>03</span><h3>Match</h3><p>Rail plans and changes pair by station, stop ID, and arrival or departure type.</p></article>
+        <article><span>04</span><h3>Disclose</h3><p>Unmatched hours stay visible. Weather effects remain unavailable until overlap is measured.</p></article>
+      </div>
+      <div class="method-statement reveal">
+        <span>Operating principle</span>
+        <p>Same city. Same UTC hour. Or no claim.</p>
       </div>
     </section>
   </main>
 
-  <footer><span>SIGNAL//OPS v0.5</span><span>Python · SQLite · GitHub Pages</span></footer>
+  <footer>
+    <div class="footer-brand">SIGNAL//OPS <span>v0.5</span></div>
+    <p>Python · SQLite · DWD · Deutsche Bahn · GitHub Pages</p>
+    <a href="#overview">Return to signal <span aria-hidden="true">↑</span></a>
+  </footer>
+
   <script src="app.js"></script>
 </body>
 </html>

@@ -173,45 +173,45 @@ record identifiers; no unsupported quality percentage is presented as fact.
 
 ## Sprint 7 — Operational workflow
 
-**Status:** ⬜ Planned  
+**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
 **Objective:** Turn failed or degraded data runs into an explainable operating process.
 
 - [ ] Define run states, severity levels, and incident triggers.
 - [ ] Add structured logs and correlation/run identifiers.
-- [ ] Create an incident record and lifecycle.
+- [x] Create a duplicate-safe local incident record and open/resolved lifecycle.
 - [ ] Write runbooks for source outage, credential failure, drift, and replay.
 - [ ] Add a decision log and ownership model.
-- [ ] Design optional Jira/Confluence mappings without making them runtime dependencies.
+- [x] Design optional Jira/Confluence mappings without making them runtime dependencies.
 - [ ] Demonstrate one controlled failure and recovery scenario.
 
 **Exit gate:** a new operator can diagnose a simulated failure using only repository artifacts.
 
 ## Sprint 8 — Analytics and review experience
 
-**Status:** ⬜ Planned  
+**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
 **Objective:** Present source health, quality, and Weather × Rail findings clearly.
 
 - [ ] Define audiences and decisions for each page before choosing visuals.
-- [ ] Build an overview, data-quality, and investigation experience.
+- [x] Build a static overview and investigation experience with honest evidence state.
 - [ ] Add filters for time, location, source, and quality state.
-- [ ] Include metric definitions, refresh timestamps, and caveats.
+- [x] Include metric definitions, refresh timestamps, and caveats.
 - [x] Add an initial formatted Excel review queue for investigation workflows.
 - [ ] Validate accessibility, readability, and screenshot quality.
-- [ ] Record the chosen delivery tool after user approval.
+- [x] Record GitHub Pages as the version 1.0 delivery tool.
 
 **Exit gate:** the interface answers its defined questions without hiding uncertainty or provenance.
 
 ## Sprint 9 — Automation and reliability
 
-**Status:** ⬜ Planned  
+**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
 **Objective:** Make verification and scheduled operation repeatable.
 
 - [x] Add CI for tests, linting, and packaging checks.
 - [ ] Add unit, contract, integration, and end-to-end test boundaries.
-- [ ] Add scheduled local or hosted runs only after deployment scope is approved.
-- [ ] Add secrets-safe runtime configuration.
+- [x] Add an optional six-hour GitHub Actions collection and Pages workflow.
+- [x] Add secrets-safe runtime configuration.
 - [ ] Add health checks and actionable failure notifications.
-- [ ] Document backup, retention, and recovery expectations.
+- [x] Document demo-grade cache retention, 30-day raw artifacts, and production limitations.
 - [ ] Measure runtime behavior from actual runs before setting targets.
 
 **Exit gate:** a clean checkout can be verified automatically, and operational failures are visible.

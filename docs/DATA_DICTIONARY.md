@@ -10,6 +10,12 @@
 | `observations` | station × timestamp × metric × import | Temperature and humidity values |
 | `service_events` | station × stop × arrival/departure × import | Planned or changed railway event snapshots |
 | `quality_results` | quality run × rule | Inspectable pass, warning, or failure evidence |
+| `operational_signals` | stable rule × city/hour or source scope | Evidence for the four approved version 1.0 signal types |
+| `incidents` | incident occurrence | Open/resolved lifecycle; at most one open incident per stable signal |
+
+Version 1.0 signal types are `DELAY_OVER_20_MINUTES`, `CANCELLATION_DETECTED`,
+`SOURCE_DATA_STALE`, and `SCHEMA_CHANGED`. A resolved condition may open a later incident if it is
+detected again. No machine-learning score or opaque composite severity is used.
 
 ## Rhine–Ruhr city-hour export
 

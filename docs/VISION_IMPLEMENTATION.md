@@ -17,12 +17,12 @@ means an external account or application is required; `Planned` means no complet
 | Weather × Railway city-hour export | Partial | Export works and preserves unmatched hours; current sources have zero overlapping hours |
 | Raw/Bronze and parsed-raw layers | Complete | Raw archive plus SQLite replay tables; credential-free evidence is committed |
 | Validation and quality results | Partial by source | Full configured DWD suite; DB currently checks event timestamp usability |
-| Data Source Health | Partial | Transparent rule states exist; API health and UI remain later work |
+| Data Source Health | Complete for v1 rules | Scheduled runs evaluate freshness and schema drift; dashboard exposes evidence status |
 | Numeric Data Trust Score | Deliberately deferred | No justified weighting formula; evidence stays visible per rule |
 | Schema drift | Complete at parsed-payload layer | Baseline field/type fingerprints; raw contract drift remains later work |
 | Delay and cancellation derivation | Complete for matched events | Stable plan/change join; unmatched changes excluded |
-| Signals and thresholds | Planned | Sprint 7 after the descriptive analysis is valid |
-| Incidents, actions and decisions | Planned | Sprint 7 |
+| Signals and thresholds | Complete for v1 | Four transparent rules: delay, cancellation, stale source, and schema change |
+| Incidents, actions and decisions | Partial | Duplicate-safe local incident lifecycle is implemented; external Jira sync is blocked on a workspace |
 | Excel review queue | Partial | Initial formatted workbook exists; automated regeneration remains planned |
 | Power BI data exports | Planned | Sprint 8; `.pbix` requires Power BI access |
 | Jira/Confluence/Miro outputs | Planned | Sprint 8; live publishing requires external accounts |
@@ -30,7 +30,7 @@ means an external account or application is required; `Planned` means no complet
 | Query API | Deferred | GitHub Pages cannot host Python; static JSON is the version 1.0 interface |
 | CI | Configured | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Configured | Static deployment workflow exists; remote verification requires Pages to be enabled |
-| Scheduled collection | Planned | Requires GitHub secrets and a reviewed persistence design |
+| Scheduled collection | Configured for student scope | Six-hour Actions workflow; cache-backed SQLite plus 30-day raw run artifacts, requiring DB secrets |
 | SMARD, UBA and Destatis missions | Source research in progress | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

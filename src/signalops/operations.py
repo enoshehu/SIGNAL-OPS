@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+import json
+import sqlite3
+from collections.abc import Iterable
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import json
 from pathlib import Path
-import sqlite3
-from typing import Iterable
 
 from signalops.analysis import hourly_summary
 from signalops.quality import QualityResult
-
 
 OPERATIONS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS operational_signals (
@@ -193,7 +192,9 @@ def stored_quality_signals(database: Path, *, detected_at: datetime) -> list[Sig
     return signals
 
 
-def run_operational_cycle(database: Path, *, detected_at: datetime | None = None) -> tuple[int, int]:
+def run_operational_cycle(
+    database: Path, *, detected_at: datetime | None = None
+) -> tuple[int, int]:
     observed_at = detected_at or datetime.now(UTC)
     signals = analysis_signals(hourly_summary(database), detected_at=observed_at)
     signals.extend(stored_quality_signals(database, detected_at=observed_at))

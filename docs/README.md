@@ -14,6 +14,7 @@ be copied into a GitHub Wiki later without changing the source-of-truth workflow
 | Review current Sprint 2 progress | [Sprint 2 record](sprints/SPRINT-02-FIRST-INGESTION.md) |
 | Review Sprint 3 storage and replay | [Sprint 3 record](sprints/SPRINT-03-STORAGE-REPLAY.md) |
 | Track every vision requirement | [Vision implementation map](VISION_IMPLEMENTATION.md) |
+| Understand the simplified student architecture | [Architecture audit](ARCHITECTURE_AUDIT.md) |
 | Review the universal model | [Sprint 4 record](sprints/SPRINT-04-UNIVERSAL-MODEL.md) |
 | Review data-quality evidence | [Sprint 5 record](sprints/SPRINT-05-DATA-QUALITY.md) |
 | Review the Rhine–Ruhr scope | [Sprint 6 record](sprints/SPRINT-06-RHINE-RUHR-SCOPE.md) |

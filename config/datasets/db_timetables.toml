@@ -2,6 +2,7 @@
 key = "db_timetables"
 name = "DB planned timetables"
 adapter = "db"
+stream = "plan"
 entity_type = "rail_station"
 refresh_minutes = 60
 

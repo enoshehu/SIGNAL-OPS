@@ -9,7 +9,7 @@ function renderMetrics(rows) {
   const matched = total(rows, "matched");
   const delayed = total(rows, "delayed");
   const cancelled = total(rows, "cancelled");
-  const weightedDelay = delayed ? rows.reduce((sum, row) => sum + row.meanDelay * row.delayed, 0) / delayed : null;
+  const weightedDelay = delayed ? rows.reduce((sum, row) => sum + (row.meanDelay ?? 0) * row.delayed, 0) / delayed : null;
   const metrics = [
     ["Planned events", format.format(plans), "saved timetable slice"],
     ["Matched changes", format.format(matched), plans ? `${format.format(matched / plans * 100)}% of plans` : "n.a."],
@@ -22,13 +22,13 @@ function renderMetrics(rows) {
 }
 
 function renderCities(rows) {
-  const maxShare = Math.max(...rows.map(row => row.delayed / row.plans), 0.01);
+  const maxShare = Math.max(...rows.map(row => row.plans ? row.delayed / row.plans : 0), 0.01);
   document.querySelector("#delay-chart").innerHTML = rows.map((row, index) => {
-    const share = row.delayed / row.plans;
+    const share = row.plans ? row.delayed / row.plans : 0;
     return `<div class="bar-row"><span>${row.name}</span><div class="bar-track"><div class="bar-fill" style="width:${share / maxShare * 100}%;animation-delay:${index * 90}ms"></div></div><b>${format.format(share * 100)}%</b></div>`;
   }).join("");
   document.querySelector("#city-table").innerHTML = rows.map(row =>
-    `<tr><td>${row.name}</td><td>${row.plans}</td><td>${row.matched}</td><td>${format.format(row.meanDelay)} min</td><td>${row.maxDelay} min</td></tr>`
+    `<tr><td>${row.name}</td><td>${row.plans}</td><td>${row.matched}</td><td>${row.meanDelay === null ? "n.a." : `${format.format(row.meanDelay)} min`}</td><td>${row.maxDelay === null ? "n.a." : `${row.maxDelay} min`}</td></tr>`
   ).join("");
 }
 

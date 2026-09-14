@@ -52,7 +52,10 @@ python3.13 -m http.server 8000 --directory site
 
 The initial Excel review queue is available at
 `artifacts/data_steward_review_queue.xlsx`. GitHub workflows verify the Python package and deploy
-the static dashboard. Scheduled live collection remains gated on a persistence decision.
+the static dashboard. An optional scheduled workflow collects a new four-city slice every six
+hours when the two DB credentials are configured as GitHub repository secrets. Its SQLite history
+uses an Actions cache for this student demonstration, while each run's raw evidence is retained as
+a downloadable artifact for 30 days.
 
 Preview or run the first-source downloads:
 
@@ -86,6 +89,13 @@ SIGNALOPS_DATA_DIR=data PYTHONPATH=src python3.13 -m signalops status
 
 # Rebuild the committed Rhine–Ruhr evidence without network access
 PYTHONPATH=src python3.13 scripts/rebuild_evidence.py
+
+# Rebuild the static dashboard JSON from that evidence database
+PYTHONPATH=src python3.13 scripts/build_dashboard.py \
+  --database build/evidence-rebuild/signalops.sqlite
+
+# Detect the four approved signal types and open duplicate-safe local incidents
+PYTHONPATH=src python3.13 -m signalops operate
 ```
 
 To use a non-default data directory or provide DB credentials, export the variables shown in
@@ -103,6 +113,9 @@ src/signalops/ports/    contracts for data sources and sinks
 src/signalops/adapters/ DWD and Deutsche Bahn boundary implementations
 src/signalops/          configuration, orchestration, and CLI
 tests/                  offline unit tests with deterministic fakes
+site/                   static GitHub Pages dashboard
+integrations/           Jira, Confluence, Miro, and Power BI handoff assets
+artifacts/               Excel data-steward review queue
 ```
 
 ## Project documentation
@@ -121,6 +134,7 @@ tests/                  offline unit tests with deterministic fakes
 | [Sprint 6 record](docs/sprints/SPRINT-06-RHINE-RUHR-SCOPE.md) | Four-city scope, verified station map, and remaining analysis gate |
 | [Regional data profile](docs/analysis/RHINE_RUHR_DATA_PROFILE.md) | Measured coverage, quality findings, and current join limitation |
 | [Data dictionary](docs/DATA_DICTIONARY.md) | Canonical tables and city-hour export fields |
+| [Architecture audit](docs/ARCHITECTURE_AUDIT.md) | Student-focused simplification, criticism, and feasibility boundaries |
 | [Vision implementation map](docs/VISION_IMPLEMENTATION.md) | Requirement-by-requirement implementation truth |
 | [Version 1.0 scope](docs/VERSION_1_SCOPE.md) | Binding first-release boundary and future-version plan |
 | [Tooling deliverables](docs/TOOLING_DELIVERABLES.md) | Bounded roles for Jira, Confluence, Miro, Power BI, and Excel |
@@ -141,5 +155,5 @@ The regional snapshot contains verified DWD observations plus separate DB plan a
 for all four cities. It can be rebuilt offline from `evidence/raw/`. The rail-only export describes
 matched delays and cancellations for the saved slice. The source dates still do not overlap:
 weather ends on 2026-09-13 while rail begins on 2026-09-14, so the export correctly reports zero
-paired city-hours. No weather relationship, causal result, dashboard, or production metric is
-presented as complete.
+paired city-hours. The dashboard reports this limitation directly. No weather relationship,
+causal result, or production-grade reliability claim is presented as complete.

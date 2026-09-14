@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
 import os
-from pathlib import Path
 import shutil
 import sqlite3
+from dataclasses import replace
+from pathlib import Path
 
 from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter, RawFileStore
 from signalops.analysis import hourly_summary
@@ -14,6 +14,7 @@ from signalops.catalog import load_catalog
 from signalops.config import load_settings
 from signalops.operations import run_operational_cycle
 from signalops.publish import write_dashboard_json
+from signalops.quality import assess
 from signalops.storage import SQLiteRecordStore
 from signalops.universal import normalize
 
@@ -54,6 +55,12 @@ def main() -> int:
     catalog = load_catalog(config.resolve().parent / "datasets")
     for dataset_key in ("dwd_weather", "db_timetables", "db_changes"):
         normalize(database, catalog[dataset_key])
+
+    for city in settings.cities:
+        for dataset_key in ("dwd_weather", "db_timetables", "db_changes"):
+            definition = catalog[dataset_key]
+            scope = city.dwd_station_id if definition.adapter == "dwd" else city.db_eva_number
+            assess(database, definition, entity_key=f"{definition.adapter}:{scope}")
 
     rows = hourly_summary(database)
     output = Path(os.getenv("SIGNALOPS_SITE_DATA", "site/data/summary.json"))

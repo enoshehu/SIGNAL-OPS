@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import unittest
+from datetime import UTC, datetime
 
 from signalops.publish import dashboard_payload
 
@@ -9,14 +9,24 @@ class PublishTests(unittest.TestCase):
         payload = dashboard_payload(
             [
                 {
-                    "city": "essen", "paired": 0, "planned_events": 10,
-                    "matched_change_events": 8, "cancelled_events": 1, "delayed_events": 4,
-                    "average_delay_minutes": 5.0, "maximum_delay_minutes": 12.0,
+                    "city": "essen",
+                    "paired": 0,
+                    "planned_events": 10,
+                    "matched_change_events": 8,
+                    "cancelled_events": 1,
+                    "delayed_events": 4,
+                    "average_delay_minutes": 5.0,
+                    "maximum_delay_minutes": 12.0,
                 },
                 {
-                    "city": "essen", "paired": 0, "planned_events": 5,
-                    "matched_change_events": 5, "cancelled_events": 0, "delayed_events": 1,
-                    "average_delay_minutes": 15.0, "maximum_delay_minutes": 15.0,
+                    "city": "essen",
+                    "paired": 0,
+                    "planned_events": 5,
+                    "matched_change_events": 5,
+                    "cancelled_events": 0,
+                    "delayed_events": 1,
+                    "average_delay_minutes": 15.0,
+                    "maximum_delay_minutes": 15.0,
                 },
             ],
             generated_at=datetime(2026, 9, 14, tzinfo=UTC),

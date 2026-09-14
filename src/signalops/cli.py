@@ -14,8 +14,8 @@ from signalops.adapters import DeutscheBahnTimetablesAdapter, DWDOpenDataAdapter
 from signalops.analysis import export_hourly_csv
 from signalops.catalog import load_catalog
 from signalops.config import ConfigurationError, load_settings
-from signalops.pipeline import IngestionPipeline
 from signalops.operations import run_operational_cycle
+from signalops.pipeline import IngestionPipeline
 from signalops.quality import assess
 from signalops.storage import SQLiteRecordStore
 from signalops.universal import normalize

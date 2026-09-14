@@ -67,8 +67,11 @@ air-quality view.
 
 ### Version 3.0 — multi-domain operations
 
-Add combined mission control, improved source-health history, reusable adapter tooling, an
-optional server-hosted query API, and one further domain such as Destatis.
+Add Destatis, combined mission control, actions, decisions, operational KPIs, improved
+source/API-health history, reusable adapter tooling, and an optional server-hosted query API.
+Evaluate a numeric trust score only after its weights can be justified and validated. This closes
+the remaining long-term concepts in `PROJECT_VISION.md` without pretending they belong in the
+first release.
 
 ## Definition of done
 

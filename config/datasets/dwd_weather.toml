@@ -2,6 +2,7 @@
 key = "dwd_weather"
 name = "DWD hourly weather"
 adapter = "dwd"
+stream = "observations"
 entity_type = "weather_station"
 refresh_minutes = 1440
 

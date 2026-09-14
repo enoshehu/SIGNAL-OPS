@@ -1,10 +1,10 @@
-Issue Type,Summary,Description,Priority,Epic
-Epic,Pipeline and source evidence,"Collect, preserve, replay, and normalize DWD and DB data.",High,
-Epic,Data quality,"Make missing, stale, invalid, and changed source data visible.",High,
-Epic,Analytics and review,"Produce the city-hour analysis, dashboard, Power BI report, and Excel queue.",High,
-Epic,Automation and release,"Verify and publish the project through GitHub Actions and Pages.",High,
-Task,Collect overlapping source hours,"Retain DB evidence until the matching DWD observations become available.",Highest,Pipeline and source evidence
-Task,Publish the static dashboard,"Deploy the site directory through the reviewed Pages workflow.",High,Automation and release
-Task,Build the Power BI report,"Create the three scoped report pages from versioned export files.",Medium,Analytics and review
-Task,Review the Excel queue,"Assign reviewers and record the disposition of each exported issue.",Medium,Analytics and review
-Bug,DWD schema change detected,"Controlled version 1.0 incident. Attach the failed run and field-level schema evidence; resolve it only after a successful replay.",Highest,Data quality
+Issue ID,Issue Type,Summary,Description,Priority,Parent ID
+100,Epic,Pipeline and source evidence,"Collect, preserve, replay, and normalize DWD and DB data.",High,
+101,Epic,Data quality,"Make missing, stale, invalid, and changed source data visible.",High,
+102,Epic,Analytics and review,"Produce the city-hour analysis, dashboard, Power BI report, and Excel queue.",High,
+103,Epic,Automation and release,"Verify and publish the project through GitHub Actions and Pages.",High,
+200,Task,Collect overlapping source hours,"Retain DB evidence until the matching DWD observations become available.",Highest,100
+201,Task,Publish the static dashboard,"Deploy the site directory through the reviewed Pages workflow.",High,103
+202,Task,Build the Power BI report,"Create the three scoped report pages from versioned export files.",Medium,102
+203,Task,Review the Excel queue,"Assign reviewers and record the disposition of each exported issue.",Medium,102
+204,Bug,DWD schema change detected,"Controlled version 1.0 incident. Attach the failed run and field-level schema evidence; resolve it only after a successful replay.",Highest,101

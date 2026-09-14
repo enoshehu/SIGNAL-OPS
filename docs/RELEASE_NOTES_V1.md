@@ -18,5 +18,5 @@ Duisburg, Essen, Düsseldorf and Köln.
 ## Release gate still open
 
 Do not tag `v1.0.0` until genuine weather and railway overlap is preserved for every city, the
-generated paired analysis is reviewed, the workflow is verified on GitHub, and the published
-dashboard screenshot reflects that evidence.
+generated paired analysis is reviewed, and the published dashboard screenshot reflects that
+evidence.

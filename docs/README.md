@@ -28,7 +28,8 @@
 - [Architecture decisions and build history](BUILD_LOG.md)
 - [External-tool deliverables](TOOLING_DELIVERABLES.md)
 - [Sprint history](sprints/)
-- [Current Sprint 7 record](sprints/SPRINT-07-OVERLAP-READINESS.md)
+- [Sprint 7 overlap record](sprints/SPRINT-07-OVERLAP-READINESS.md)
+- [Current Sprint 8 record](sprints/SPRINT-08-RELEASE-AUDIT.md)
 
 The root [README](../README.md) is the public entry point. Detailed sprint files are retained for
 traceability and are not required for the first review of the project.

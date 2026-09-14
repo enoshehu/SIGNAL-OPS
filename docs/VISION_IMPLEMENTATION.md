@@ -29,7 +29,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |
-| Scheduled collection | Implemented locally | GitHub workflow, release-asset state, retention, and failure issue are ready; push/auth verification remains |
+| Scheduled collection | Complete for v1 | GitHub live DWD/DB run, rolling release asset, retention, failure issue, and Pages deployment verified |
 | SMARD, UBA and Destatis missions | Planned | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

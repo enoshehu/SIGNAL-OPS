@@ -447,7 +447,7 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
 - Added `allow_missing` only to the DB change-feed timestamp rule. Supplied timestamps must still
   parse with a timezone; DB plan and DWD timestamps remain required.
 - Added a regression test and expanded the offline suite to 55 passing tests.
-- Verified a complete GitHub run: live DWD/DB collection, quality assessment, cached state, raw
+- Verified a complete GitHub run: live DWD/DB collection, quality assessment, rolling release-asset state, raw
   evidence upload, dashboard build, and Pages deployment all passed.
 - That run produced 52,810 dashboard rows, eight rule-based signals, and eight newly opened local
   incidents. The live dashboard still reports zero paired city-hours because the source windows
@@ -466,3 +466,12 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
   evidence but do not replace the public CSV, profile, dashboard, signals, or incidents.
 - Added focused regression tests for source-time recency, change evolution, six-hour DWD polling,
   and publication blocking.
+
+## Sprint 8 — release reconciliation
+
+- Rebuilt the versioned dashboard from committed raw evidence: 105,600 weather observations,
+  3,917 railway events, and 52,807 city-hour rows.
+- Added an exact dashboard-to-database comparison that ignores only the generation timestamp.
+- Added the comparison to CI for committed evidence and to the live workflow before publication.
+- Kept two honest modes: the checked-in baseline traces to committed evidence; the deployed live
+  view traces to the rolling database preserved in the `live-data` release.

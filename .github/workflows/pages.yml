@@ -62,6 +62,9 @@ jobs:
           DB_API_KEY: ${{ secrets.DB_API_KEY }}
           SIGNALOPS_DATA_DIR: runtime
         run: signalops sync --config config/base.toml --env-file /dev/null
+      - name: Reconcile live dashboard with rolling database
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
+        run: PYTHONPATH=src python scripts/release_check.py --database runtime/signalops.sqlite
       - name: Publish rolling live database
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && success()
         env:

@@ -37,6 +37,11 @@ jobs:
       - name: Rebuild committed evidence
         if: matrix.python-version == '3.13'
         run: PYTHONPATH=src python scripts/rebuild_evidence.py
+      - name: Reconcile dashboard with committed evidence
+        if: matrix.python-version == '3.13'
+        run: >-
+          PYTHONPATH=src python scripts/release_check.py
+          --database build/evidence-rebuild/signalops.sqlite
       - name: Build package
         if: matrix.python-version == '3.13'
         run: python -m pip wheel --no-deps --wheel-dir dist .

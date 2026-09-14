@@ -28,4 +28,6 @@
 - Zero overlap remains an explicit pending result, not a hidden failure.
 
 Run `PYTHONPATH=src python scripts/release_check.py --database data/rhine_ruhr/signalops.sqlite`
-before a release. CI runs the repository portion on Python 3.11–3.13.
+before a release. CI runs the repository checks on Python 3.11–3.13 and reconciles the rebuilt
+evidence database with the versioned dashboard on Python 3.13. Live publication performs the same
+comparison against its rolling database.

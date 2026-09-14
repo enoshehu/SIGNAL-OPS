@@ -54,7 +54,8 @@ flowchart LR
 
 ### Release
 
-- [ ] Reconcile every public number with the committed evidence.
+- [x] Reconcile the versioned dashboard with committed evidence and each live deployment with its
+  preserved rolling database.
 - [x] Add repeatable secret, licence, dependency, claim, and integrity checks.
 - [x] Add a concise demo script and architecture/lineage diagram.
 - [ ] Tag `v1.0.0` and publish release notes.
@@ -108,6 +109,7 @@ belongs in later releases.
 | 4 | Canonical model | Sources, entities, observations, and railway events |
 | 5 | Quality | Persisted rules, affected records, and schema snapshots |
 | 6 | Rhine–Ruhr | Four-city data, plan/change matching, analysis, and Pages preview |
-| 7 | Overlap readiness | Active: rolling collection, fail-closed publication, and paired-data gate |
+| 7 | Overlap readiness | Implementation complete; external DWD overlap gate remains active |
+| 8 | Release reconciliation | Active: exact dashboard-to-database checks in CI and live publishing |
 
 Detailed sprint records remain under `docs/sprints/` as implementation history.

@@ -1,93 +1,93 @@
 {
-  "generatedAt": "2026-09-14T21:27:26.371159+00:00",
+  "generatedAt": "2026-09-14T21:43:04.846719+00:00",
   "status": "WAITING FOR TIME OVERLAP",
   "pairedHours": 0,
-  "weatherHours": 588,
-  "railHours": 17,
-  "windowStart": "2026-09-07T21:00:00+00:00",
-  "windowEnd": "2026-09-14T21:00:00+00:00",
+  "weatherHours": 52800,
+  "railHours": 7,
+  "windowStart": "2025-03-13T00:00:00+00:00",
+  "windowEnd": "2026-09-14T18:00:00+00:00",
   "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
   "cities": [
     {
       "key": "duesseldorf",
       "name": "Düsseldorf",
-      "plans": 163,
-      "matched": 161,
-      "cancelled": 2,
-      "delayed": 111,
-      "meanDelay": 11.8,
-      "maxDelay": 136.0,
-      "weatherHours": 147,
+      "plans": 95,
+      "matched": 95,
+      "cancelled": 0,
+      "delayed": 66,
+      "meanDelay": 12.8,
+      "maxDelay": 84.0,
+      "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
       "temperature": 17.8,
       "humidity": 98.0,
-      "precipitation": 0.0,
-      "windSpeed": 1.0
+      "precipitation": null,
+      "windSpeed": null
     },
     {
       "key": "duisburg",
       "name": "Duisburg",
-      "plans": 130,
-      "matched": 101,
+      "plans": 83,
+      "matched": 61,
       "cancelled": 0,
-      "delayed": 77,
-      "meanDelay": 18.5,
-      "maxDelay": 138.0,
-      "weatherHours": 147,
+      "delayed": 47,
+      "meanDelay": 19.9,
+      "maxDelay": 83.0,
+      "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
       "temperature": 16.3,
       "humidity": 95.0,
-      "precipitation": 0.0,
-      "windSpeed": 0.7
+      "precipitation": null,
+      "windSpeed": null
     },
     {
       "key": "essen",
       "name": "Essen",
-      "plans": 88,
-      "matched": 88,
-      "cancelled": 1,
-      "delayed": 56,
-      "meanDelay": 6.8,
-      "maxDelay": 33.0,
-      "weatherHours": 147,
+      "plans": 51,
+      "matched": 51,
+      "cancelled": 0,
+      "delayed": 35,
+      "meanDelay": 5.2,
+      "maxDelay": 27.0,
+      "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
       "temperature": 15.5,
       "humidity": 97.0,
-      "precipitation": 0.0,
-      "windSpeed": 0.5
+      "precipitation": null,
+      "windSpeed": null
     },
     {
       "key": "koeln",
       "name": "Köln",
-      "plans": 188,
-      "matched": 188,
-      "cancelled": 4,
-      "delayed": 113,
-      "meanDelay": 12.5,
-      "maxDelay": 137.0,
-      "weatherHours": 147,
+      "plans": 124,
+      "matched": 124,
+      "cancelled": 2,
+      "delayed": 73,
+      "meanDelay": 13.3,
+      "maxDelay": 90.0,
+      "weatherHours": 13200,
       "latestWeatherAt": "2026-09-13T23:00:00+00:00",
       "temperature": 16.6,
       "humidity": 97.0,
-      "precipitation": 0.0,
-      "windSpeed": 1.3
+      "precipitation": null,
+      "windSpeed": null
     }
   ],
   "sources": [
     {
       "name": "DWD Weather",
       "state": "READY",
-      "detail": "588 city-hours"
+      "detail": "52800 city-hours"
     },
     {
       "name": "DB Plans",
       "state": "READY",
-      "detail": "569 timetable events"
+      "detail": "353 timetable events"
     },
     {
       "name": "DB Changes",
       "state": "READY",
-      "detail": "538 matched events"
+      "detail": "331 matched events"
     },
     {
       "name": "Paired analysis",

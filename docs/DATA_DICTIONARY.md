@@ -7,7 +7,7 @@
 | `sources` | one source | Publisher, licence, and source URL |
 | `datasets` | one dataset and source stream | Adapter, stream, entity type, and refresh plan |
 | `entities` | one station | Rail or weather station with city metadata |
-| `observations` | station × timestamp × metric × import | Temperature and humidity values |
+| `observations` | station × timestamp × metric × import | Temperature, humidity, rain, and wind values |
 | `service_events` | station × stop × arrival/departure × import | Planned or changed railway event snapshots |
 | `quality_results` | quality run × rule | Inspectable pass, warning, or failure evidence |
 | `operational_signals` | stable rule × city/hour or source scope | Evidence for the four approved version 1.0 signal types |
@@ -38,6 +38,9 @@ Grain: one city and UTC hour per row.
 | `maximum_delay_minutes` | Largest positive delay among delayed events; null when none are observed |
 | `air_temperature_c` | DWD hourly air temperature in degrees Celsius |
 | `relative_humidity_pct` | DWD hourly relative humidity in percent |
+| `precipitation_mm` | DWD hourly precipitation total in millimetres |
+| `wind_speed_m_s` | DWD hourly mean wind speed in metres per second |
+| `wind_direction_deg` | DWD hourly mean wind direction in degrees |
 | `weather_available` | `1` if a weather row exists, otherwise `0` |
 | `rail_available` | `1` if a railway row exists, otherwise `0` |
 | `paired` | `1` only when both sources exist for the city and hour |

@@ -1,8 +1,8 @@
 [dataset]
-key = "dwd_weather"
-name = "DWD hourly weather"
+key = "dwd_precipitation"
+name = "DWD hourly precipitation"
 adapter = "dwd"
-stream = "observations"
+stream = "precipitation"
 entity_type = "weather_station"
 refresh_minutes = 1440
 
@@ -12,8 +12,8 @@ name = "DWD Climate Data Center"
 provider = "Deutscher Wetterdienst"
 license = "CC BY 4.0"
 url = "https://opendata.dwd.de/climate_environment/CDC"
-product = "air_temperature"
-archive_path = "observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_{station_id}_akt.zip"
+product = "precipitation"
+archive_path = "observations_germany/climate/hourly/precipitation/recent/stundenwerte_RR_{station_id}_akt.zip"
 
 [[entities]]
 key = "dwd:01078"
@@ -40,7 +40,6 @@ longitude = 6.9677
 key = "dwd:02667"
 name = "Köln/Bonn"
 city = "koeln"
-role = "Köln-area airport station"
 latitude = 50.8645
 longitude = 7.1575
 
@@ -49,16 +48,12 @@ key = "valid_timestamp"
 severity = "high"
 
 [[quality]]
-key = "humidity_range"
-severity = "medium"
+key = "nonnegative_value"
+severity = "high"
 
 [[quality]]
 key = "value_present"
 severity = "medium"
-
-[[quality]]
-key = "unique_observation"
-severity = "high"
 
 [[quality]]
 key = "entity_integrity"
@@ -71,7 +66,7 @@ severity = "medium"
 [[quality]]
 key = "freshness"
 severity = "medium"
-max_age_minutes = 1440
+max_age_minutes = 2880
 
 [[quality]]
 key = "schema_drift"

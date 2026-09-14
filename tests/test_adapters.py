@@ -32,6 +32,13 @@ def dwd_zip() -> bytes:
     return content.getvalue()
 
 
+def dwd_product_zip(filename: str, header: str, row: str) -> bytes:
+    content = BytesIO()
+    with ZipFile(content, "w", ZIP_DEFLATED) as archive:
+        archive.writestr(filename, header + "\r\n" + row + "\r\n")
+    return content.getvalue()
+
+
 class AdapterTests(unittest.TestCase):
     def test_dwd_public_adapter_is_ready_without_credentials(self) -> None:
         settings = DWDSettings(
@@ -58,6 +65,43 @@ class AdapterTests(unittest.TestCase):
         self.assertFalse(adapter.ready)
         with self.assertRaisesRegex(RuntimeError, "DB_API_CLIENT_ID"):
             adapter.download()
+
+    def test_dwd_precipitation_and_wind_products(self) -> None:
+        settings = DWDSettings(
+            True, "https://example.invalid", 30, "01303", "weather_{station_id}.zip"
+        )
+        precipitation = DWDOpenDataAdapter(
+            settings,
+            http=FakeHttpClient(
+                dwd_product_zip(
+                    "produkt_rr_stunde_sample.txt",
+                    "STATIONS_ID;MESS_DATUM;QN_8;R1",
+                    "1303;2026091409;3;2.4",
+                ),
+                "application/zip",
+            ),
+            product="precipitation",
+        )
+        wind = DWDOpenDataAdapter(
+            settings,
+            http=FakeHttpClient(
+                dwd_product_zip(
+                    "produkt_ff_stunde_sample.txt",
+                    "STATIONS_ID;MESS_DATUM;QN_3;F;D",
+                    "1303;2026091409;3;4.2;235",
+                ),
+                "application/zip",
+            ),
+            product="wind",
+        )
+
+        rain_record = next(iter(precipitation.parse(precipitation.download())))
+        wind_record = next(iter(wind.parse(wind.download())))
+
+        self.assertEqual(rain_record.payload["precipitation_mm"], 2.4)
+        self.assertEqual(wind_record.payload["wind_speed_m_s"], 4.2)
+        self.assertEqual(wind_record.payload["wind_direction_deg"], 235.0)
+        self.assertEqual(precipitation.download().provenance["stream_key"], "precipitation")
 
     def test_db_adapter_sends_secret_headers_and_parses_xml(self) -> None:
         xml = (

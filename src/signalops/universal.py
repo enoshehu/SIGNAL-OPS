@@ -122,10 +122,22 @@ def _weather(
         if entity_key not in entity_keys:
             continue
         observed = datetime.strptime(payload["observed_at_utc"], "%Y%m%d%H").replace(tzinfo=UTC)
-        for metric, unit, field in (
-            ("air_temperature", "°C", "temperature_c"),
-            ("relative_humidity", "%", "relative_humidity_pct"),
-        ):
+        measurements = {
+            "dwd_weather": (
+                ("air_temperature", "°C", "temperature_c"),
+                ("relative_humidity", "%", "relative_humidity_pct"),
+            ),
+            "dwd_precipitation": (("precipitation", "mm", "precipitation_mm"),),
+            "dwd_wind": (
+                ("wind_speed", "m/s", "wind_speed_m_s"),
+                ("wind_direction", "°", "wind_direction_deg"),
+            ),
+        }
+        try:
+            dataset_measurements = measurements[definition.key]
+        except KeyError as exc:
+            raise ValueError(f"No weather metric mapping for dataset: {definition.key}") from exc
+        for metric, unit, field in dataset_measurements:
             observation_id = f"{definition.key}:{import_id}:{external_id}:{metric}"
             cursor = connection.execute(
                 "INSERT OR IGNORE INTO observations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",

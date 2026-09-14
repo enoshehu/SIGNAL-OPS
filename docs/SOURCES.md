@@ -15,12 +15,24 @@ conditions can change, so recheck them before changing an adapter.
   later change. SIGNAL//OPS preserves the source quality field and does not create a trust score.
 - License: CC BY 4.0 under the DWD terms of use.
 
+### Additional version 1 weather products
+
+- Hourly precipitation uses DWD's `R1` hourly total in millimetres. All four city weather stations
+  publish this product.
+- Hourly wind uses DWD's `F` mean speed and `D` direction. Düsseldorf, Essen, and Köln use their
+  city weather station. Duisburg uses Xanten, approximately 26.5 km from Duisburg-Baerl, because
+  Baerl has no active hourly-wind product.
+- Rain at 1 mm/hour and wind at 10 m/s are transparent descriptive bands, not causal thresholds.
+- Recent product rows are bounded to seven days in the operational database.
+
 Official references:
 
 - [Dataset directory](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/)
 - [Recent station files](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/)
 - [Current hourly station catalogue](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/TU_Stundenwerte_Beschreibung_Stationen.txt)
 - [Dataset description](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/DESCRIPTION_obsgermany_climate_hourly_air_temperature_en.pdf)
+- [Precipitation description](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/DESCRIPTION_obsgermany_climate_hourly_precipitation_en.pdf)
+- [Wind description](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/DESCRIPTION_obsgermany_climate_hourly_wind_en.pdf)
 - [DWD terms of use](https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.txt)
 
 Suggested attribution: Deutscher Wetterdienst (DWD), Climate Data Center (CDC), hourly station
@@ -37,8 +49,8 @@ SIGNAL//OPS.
 - Access: a free DB API Marketplace subscription is available, but registration, an application,
   and credentials are required.
 - Runtime headers: `DB-Client-Id` and `DB-Api-Key`; values remain outside Git.
-- Published plan limit checked for Sprint 2: 60 calls per minute. SIGNAL//OPS makes one call per
-  explicit DB ingestion command and implements no scheduler yet.
+- Published plan limit checked for Sprint 2: 60 calls per minute. SIGNAL//OPS isolates calls by
+  station and feed and schedules only streams whose refresh interval is due.
 - License listed by DB: CC BY 4.0.
 - Live access status: the configured application is subscribed; authenticated `plan` and `fchg`
   requests succeed. `fchg` is the full-change feed used for changed times and cancellations.

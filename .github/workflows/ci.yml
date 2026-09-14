@@ -30,6 +30,10 @@ jobs:
         run: ruff format --check src tests
       - name: Test
         run: python -m unittest discover -s tests -v
+      - name: Security, licence, and claim checks
+        run: |
+          python -m pip check
+          PYTHONPATH=src python scripts/release_check.py
       - name: Rebuild committed evidence
         if: matrix.python-version == '3.13'
         run: PYTHONPATH=src python scripts/rebuild_evidence.py

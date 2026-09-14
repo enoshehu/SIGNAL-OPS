@@ -51,6 +51,7 @@ class Settings:
     name: str
     environment: str
     data_dir: Path
+    retention_days: int
     default_city: str
     cities: tuple[CitySettings, ...]
     dwd: DWDSettings
@@ -98,12 +99,15 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
             for key, value in raw["cities"].items()
         )
         default_city = str(app.get("default_city", "essen"))
+        retention_days = int(app.get("retention_days", 7))
     except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError) as exc:
         raise ConfigurationError(f"Could not load configuration from {config_path}") from exc
 
     city_by_key = {city.key: city for city in cities}
     if default_city not in city_by_key:
         raise ConfigurationError(f"Unknown default city: {default_city}")
+    if retention_days <= 0:
+        raise ConfigurationError("retention_days must be positive")
     selected = city_by_key[default_city]
 
     data_dir = Path(os.getenv("SIGNALOPS_DATA_DIR", str(app.get("data_dir", "data"))))
@@ -114,6 +118,7 @@ def load_settings(path: str | Path = "config/base.toml") -> Settings:
         name=str(app.get("name", "SIGNAL//OPS")),
         environment=os.getenv("SIGNALOPS_ENV", str(app.get("environment", "development"))),
         data_dir=data_dir,
+        retention_days=retention_days,
         default_city=default_city,
         cities=cities,
         dwd=DWDSettings(

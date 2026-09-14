@@ -60,6 +60,8 @@ def assess(
         known_rules = {
             "valid_timestamp",
             "humidity_range",
+            "nonnegative_value",
+            "wind_range",
             "value_present",
             "unique_observation",
             "entity_integrity",
@@ -122,6 +124,20 @@ def assess(
                     row[0] for row in humidity if row[4] is not None and not 0 <= row[4] <= 100
                 )
                 results.append(_result(key, len(humidity), affected, rule))
+            elif key == "nonnegative_value":
+                affected = tuple(row[0] for row in rows if row[4] is not None and row[4] < 0)
+                results.append(_result(key, len(rows), affected, rule))
+            elif key == "wind_range":
+                affected = tuple(
+                    row[0]
+                    for row in rows
+                    if row[4] is not None
+                    and (
+                        (row[3] == "wind_speed" and not 0 <= row[4] <= 100)
+                        or (row[3] == "wind_direction" and not 0 <= row[4] <= 360)
+                    )
+                )
+                results.append(_result(key, len(rows), affected, rule))
             elif key == "value_present":
                 affected = tuple(row[0] for row in rows if row[4] is None)
                 results.append(_result(key, len(rows), affected, rule))

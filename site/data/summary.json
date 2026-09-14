@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T20:21:59.075423+00:00",
+  "generatedAt": "2026-09-14T21:04:38.180212+00:00",
   "status": "COLLECTING EVIDENCE",
   "pairedHours": 0,
   "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
@@ -7,42 +7,42 @@
     {
       "key": "duesseldorf",
       "name": "Düsseldorf",
-      "plans": 95,
-      "matched": 95,
-      "cancelled": 0,
-      "delayed": 66,
-      "meanDelay": 12.8,
-      "maxDelay": 84.0
+      "plans": 163,
+      "matched": 161,
+      "cancelled": 2,
+      "delayed": 111,
+      "meanDelay": 11.8,
+      "maxDelay": 136.0
     },
     {
       "key": "duisburg",
       "name": "Duisburg",
-      "plans": 83,
-      "matched": 61,
+      "plans": 130,
+      "matched": 101,
       "cancelled": 0,
-      "delayed": 47,
-      "meanDelay": 19.9,
-      "maxDelay": 83.0
+      "delayed": 77,
+      "meanDelay": 18.5,
+      "maxDelay": 138.0
     },
     {
       "key": "essen",
       "name": "Essen",
-      "plans": 51,
-      "matched": 51,
-      "cancelled": 0,
-      "delayed": 35,
-      "meanDelay": 5.2,
-      "maxDelay": 27.0
+      "plans": 88,
+      "matched": 88,
+      "cancelled": 1,
+      "delayed": 56,
+      "meanDelay": 6.8,
+      "maxDelay": 33.0
     },
     {
       "key": "koeln",
       "name": "Köln",
-      "plans": 124,
-      "matched": 124,
-      "cancelled": 2,
-      "delayed": 73,
-      "meanDelay": 13.3,
-      "maxDelay": 90.0
+      "plans": 188,
+      "matched": 188,
+      "cancelled": 4,
+      "delayed": 113,
+      "meanDelay": 12.5,
+      "maxDelay": 137.0
     }
   ],
   "sources": [
@@ -54,12 +54,12 @@
     {
       "name": "DB Plans",
       "state": "READY",
-      "detail": "353 planned events"
+      "detail": "569 planned events"
     },
     {
       "name": "DB Changes",
       "state": "READY",
-      "detail": "331 matched events"
+      "detail": "538 matched events"
     },
     {
       "name": "Paired analysis",

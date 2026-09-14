@@ -4,7 +4,7 @@ name = "DB timetable changes"
 adapter = "db"
 stream = "changes"
 entity_type = "rail_station"
-refresh_minutes = 5
+refresh_minutes = 15
 
 [source]
 key = "db"

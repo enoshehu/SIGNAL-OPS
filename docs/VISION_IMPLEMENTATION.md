@@ -4,18 +4,18 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 
 | Vision capability | Status | Evidence or dependency |
 |---|---|---|
-| DWD raw ingestion | Complete | Historical Berlin proof plus four preserved Rhine–Ruhr station archives |
-| DB planned timetable ingestion | Complete | 221 live stop records preserved across four city stations |
-| DB timetable change ingestion | Complete | 2,599 live change-feed stops preserved separately from plans |
+| DWD raw ingestion | Complete for v1 | Temperature/humidity, precipitation, and wind products across four city scopes |
+| DB planned timetable ingestion | Complete | Incremental hourly collection across four city stations |
+| DB timetable change ingestion | Complete | Incremental 15-minute full-change collection, separated from plans |
 | Config-driven dataset onboarding | Partial | Catalog and entity scopes are configurable; each new provider still needs code and tests |
 | Source, dataset and entity catalog | Complete | Universal SQLite tables |
-| Weather observations | Complete | 105,600 regional canonical observations plus historical Berlin evidence |
+| Weather observations | Complete for v1 | Temperature, humidity, rainfall, wind speed, and wind direction with seven-day live retention |
 | Rhine–Ruhr city profiles | Complete | Selectable DWD/DB profiles for Duisburg, Essen, Düsseldorf, and Köln |
-| Railway service events | Complete for plan/change snapshots | 353 plans plus 3,564 live event updates normalized across four cities |
+| Railway service events | Complete for plan/change snapshots | Rolling plans and changes normalized across four cities |
 | City-scoped quality | Complete | Latest import and checks resolve by station scope instead of global source order |
-| Weather × Railway city-hour export | Partial | Export works and preserves unmatched hours; current sources have zero overlapping hours |
+| Weather × Railway city-hour export | Partial | Export and condition profile work; genuine overlapping evidence awaits the next DWD day |
 | Raw/Bronze and parsed-raw layers | Complete | Raw archive plus SQLite replay tables; credential-free evidence is committed |
-| Validation and quality results | Partial by source | Full configured DWD suite; DB checks timestamps, entity integrity, and change-feed schema |
+| Validation and quality results | Complete for v1 | Product-specific value checks, timestamps, integrity, continuity, freshness, and schema drift |
 | Data Source Health | Partial | Scheduled runs evaluate quality; the dashboard currently shows availability only |
 | Numeric Data Trust Score | Planned after validation | Current outputs show individual rule evidence |
 | Schema drift | Complete at parsed-payload layer | Baseline field/type fingerprints; raw contract drift remains later work |
@@ -29,7 +29,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |
-| Scheduled collection | Verified | A manual live run completed ingestion, quality checks, retained state, evidence upload, and Pages deployment |
+| Scheduled collection | Implemented locally | GitHub workflow, release-asset state, retention, and failure issue are ready; push/auth verification remains |
 | SMARD, UBA and Destatis missions | Planned | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

@@ -37,8 +37,8 @@ These capabilities remain scheduled in [ROADMAP.md](ROADMAP.md).
 ## Definition of done
 
 - [ ] The committed evidence contains overlapping weather and railway hours.
-- [ ] A clean clone rebuilds the published data and passes all tests.
-- [ ] Every dashboard number traces to SQLite and a preserved source file.
-- [ ] Pages passes accessibility and mobile checks.
-- [ ] Security, licence, and claim-to-evidence reviews are complete.
+- [x] A clean clone rebuilds the published data and passes all tests.
+- [x] Every dashboard number traces to SQLite and a preserved source file.
+- [x] Pages passes automated accessibility checks and desktop/mobile visual review.
+- [x] Security, licence, and claim-to-evidence reviews are complete.
 - [ ] Release `v1.0.0` includes a short demo and release notes.

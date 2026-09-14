@@ -31,7 +31,9 @@ message broker, warehouse, or separate API for the current workload.
 | `storage.py` | Preserve imports and parsed records with replay identity |
 | `universal.py` | Create canonical weather observations and railway events |
 | `quality.py` | Run configured checks and store their evidence |
+| `retention.py` | Enforce the rolling seven-day operational window |
 | `analysis.py` | Match plan/change events and build city-hour rows |
+| `profile.py` | Produce sample-size and weather-condition comparisons |
 | `operations.py` | Create four rule-based signals and local incidents |
 | `publish.py` | Convert analysis rows into static dashboard data |
 
@@ -41,7 +43,8 @@ message broker, warehouse, or separate API for the current workload.
 - Every import stores source, stream, station scope, retrieval time, path, checksum, and row count.
 - Canonical rows retain their import ID and source payload.
 - DWD and DB use separate normalizers because their records have different meanings.
-- Weather and railway data join only by configured city and exact UTC hour.
+- Temperature, humidity, precipitation, wind and railway data join only by configured city and
+  exact UTC hour.
 - Missing source data remains null; it is not treated as zero.
 
 ## Quality and operations
@@ -66,9 +69,10 @@ both deployment modes:
 - Schedule: collect a new source slice using GitHub Secrets, run quality checks, and publish only
   when no rule returns `failure`.
 
-The scheduled SQLite file uses Actions cache storage and raw responses are retained as workflow
-artifacts for 30 days. This is suitable for the project demonstration, not durable production
-storage.
+The scheduled workflow runs every 15 minutes. It restores one replaceable `live-data` GitHub
+Release asset, downloads only feeds that are due, enforces seven-day retention, rebuilds the site,
+then replaces the asset only after success. This avoids permanent binary database history and
+unbounded Actions-cache generations. Failures open or update one duplicate-safe GitHub issue.
 
 ## Scope decisions
 

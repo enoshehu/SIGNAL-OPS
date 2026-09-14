@@ -18,6 +18,7 @@ from signalops.operations import run_operational_cycle
 from signalops.pipeline import IngestionPipeline
 from signalops.quality import assess
 from signalops.storage import SQLiteRecordStore
+from signalops.sync import synchronize
 from signalops.universal import normalize
 
 
@@ -60,6 +61,17 @@ def build_parser() -> argparse.ArgumentParser:
         "operate", help="detect rail signals and open duplicate-safe local incidents"
     )
     operate.add_argument("--config", type=Path, default=default_config)
+    sync = subparsers.add_parser(
+        "sync", help="download due datasets, refresh quality checks, and rebuild outputs"
+    )
+    sync.add_argument("--config", type=Path, default=default_config)
+    sync.add_argument("--env-file", type=Path, default=Path(".env"))
+    sync.add_argument("--force", action="store_true", help="download even when a feed is not due")
+    sync.add_argument(
+        "--dry-run", action="store_true", help="show due requests without downloading"
+    )
+    sync.add_argument("--dataset", action="append", default=[], help="limit to one dataset key")
+    sync.add_argument("--city", action="append", default=[], help="limit to one city key")
     return parser
 
 
@@ -215,4 +227,35 @@ def main(argv: list[str] | None = None) -> int:
         print(f"signals detected: {detected}")
         print(f"new incidents opened: {opened}")
         return 0
+    if args.command == "sync":
+        try:
+            summary = synchronize(
+                args.config,
+                env_file=args.env_file,
+                force=args.force,
+                dry_run=args.dry_run,
+                datasets=args.dataset,
+                cities=args.city,
+            )
+        except (OSError, RuntimeError, ValueError, sqlite3.Error) as exc:
+            print(f"Synchronization failed: {exc}")
+            return 2
+        for item in summary.items:
+            print(f"{item.status}: {item.label} — {item.detail}")
+        if not args.dry_run:
+            print(f"new canonical rows: {summary.normalized_rows}")
+            print(f"analysis rows: {summary.analysis_rows}")
+            print(f"paired city-hours: {summary.paired_hours}")
+            print(f"signals detected: {summary.signals_detected}")
+            print(f"new incidents opened: {summary.incidents_opened}")
+            if summary.retention:
+                print(f"retention cutoff: {summary.retention.cutoff.isoformat()}")
+                print(
+                    "retention removed: "
+                    f"{summary.retention.database_rows_deleted} database rows, "
+                    f"{summary.retention.raw_artifacts_deleted} raw artifacts"
+                )
+            if summary.quality_failures:
+                print("quality warnings: " + ", ".join(summary.quality_failures))
+        return 2 if summary.operational_failures else 0
     return 1

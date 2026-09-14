@@ -3,6 +3,7 @@ name = "SIGNAL//OPS"
 environment = "development"
 data_dir = "data/rhine_ruhr"
 default_city = "essen"
+retention_days = 7
 
 [sources.dwd]
 enabled = true

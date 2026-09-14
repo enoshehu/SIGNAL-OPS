@@ -74,9 +74,18 @@ class UniversalModelTests(unittest.TestCase):
         self.assertEqual(_db_time("2601151200"), "2026-01-15T11:00:00+00:00")
         self.assertEqual(_db_time("2607151200"), "2026-07-15T10:00:00+00:00")
 
-    def test_catalog_loads_both_datasets(self) -> None:
+    def test_catalog_loads_configured_datasets(self) -> None:
         catalog = load_catalog(Path("config/datasets"))
-        self.assertEqual(set(catalog), {"db_changes", "dwd_weather", "db_timetables"})
+        self.assertEqual(
+            set(catalog),
+            {
+                "db_changes",
+                "db_timetables",
+                "dwd_weather",
+                "dwd_precipitation",
+                "dwd_wind",
+            },
+        )
         self.assertEqual(catalog["db_timetables"].signals[0]["threshold"], 20)
         self.assertEqual(catalog["db_changes"].stream, "changes")
 

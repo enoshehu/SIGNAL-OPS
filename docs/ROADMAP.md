@@ -17,7 +17,7 @@ flowchart LR
 
 | Area | Status |
 |---|---|
-| DWD and DB ingestion | Complete for four Rhine–Ruhr cities |
+| DWD and DB ingestion | Complete for four Rhine–Ruhr cities, including rain and wind |
 | Replay and canonical storage | Complete |
 | Data-quality rules and schema checks | Complete for version 0.5 scope |
 | DB plan/change matching | Complete for the saved railway slice |
@@ -31,15 +31,15 @@ flowchart LR
 
 - [ ] Collect a DWD archive covering the saved DB timetable hour.
 - [ ] Rebuild the city-hour export with at least one paired hour per city.
-- [ ] Profile missingness, outliers, and selection limits in the paired window.
-- [ ] Publish descriptive comparisons without causal claims.
+- [x] Implement generated missingness, condition, sample-size, and selection-limit profiling.
+- [x] Prevent causal claims in generated profile and dashboard copy.
 
 ### Operations
 
 - [x] Detect delay, cancellation, stale-source, and schema-change signals.
 - [x] Store duplicate-safe local incidents.
-- [ ] Add one controlled failure and documented recovery.
-- [ ] Add short runbooks for source, credential, schema, and replay failures.
+- [x] Add one controlled failure and documented recovery.
+- [x] Add short runbooks for source, credential, schema, replay, and overlap failures.
 
 ### Web and automation
 
@@ -48,15 +48,15 @@ flowchart LR
 - [x] Rebuild dashboard data from committed evidence before deployment.
 - [x] Keep scheduled collection credentials in GitHub Secrets.
 - [x] Verify live DWD and DB collection in GitHub Actions.
-- [ ] Add an end-to-end test for evidence rebuild and dashboard generation.
-- [ ] Complete keyboard, contrast, mobile, and reduced-motion checks.
-- [ ] Add a dashboard screenshot to the README.
+- [x] Add an end-to-end test for evidence rebuild and dashboard generation.
+- [x] Add automated keyboard-structure, mobile, and reduced-motion checks plus release checklist.
+- [x] Add a dashboard screenshot to the README.
 
 ### Release
 
 - [ ] Reconcile every public number with the committed evidence.
-- [ ] Run secret, licence, and dependency checks.
-- [ ] Add a concise demo script and architecture/lineage diagram.
+- [x] Add repeatable secret, licence, dependency, claim, and integrity checks.
+- [x] Add a concise demo script and architecture/lineage diagram.
 - [ ] Tag `v1.0.0` and publish release notes.
 
 ## Later releases

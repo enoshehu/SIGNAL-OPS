@@ -1,5 +1,6 @@
 const format = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
 const cityColours = ["#ff4d24", "#397a9e", "#88a61b", "#a15b9a"];
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function total(rows, field) {
   return rows.reduce((sum, row) => sum + Number(row[field] ?? 0), 0);
@@ -101,7 +102,10 @@ function renderRoute(cities, select) {
     button.addEventListener("click", () => {
       select.value = button.dataset.city;
       select.dispatchEvent(new Event("change"));
-      document.querySelector("#cities").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.querySelector("#cities").scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
     });
   });
 }

@@ -22,6 +22,9 @@ COLUMNS = (
     "maximum_delay_minutes",
     "air_temperature_c",
     "relative_humidity_pct",
+    "precipitation_mm",
+    "wind_speed_m_s",
+    "wind_direction_deg",
     "weather_available",
     "rail_available",
     "paired",
@@ -31,26 +34,33 @@ COLUMNS = (
 def hourly_summary(database: Path) -> list[dict[str, object]]:
     query = """
     WITH weather_imports AS (
-      SELECT entity_key, MAX(import_id) AS import_id
+      SELECT dataset_key, entity_key, MAX(import_id) AS import_id
       FROM observations
-      GROUP BY entity_key
+      GROUP BY dataset_key, entity_key
     ),
     latest_weather AS (
       SELECT o.* FROM observations o
       JOIN weather_imports i
-        ON i.entity_key = o.entity_key AND i.import_id = o.import_id
+        ON i.dataset_key = o.dataset_key
+       AND i.entity_key = o.entity_key AND i.import_id = o.import_id
     ),
     weather AS (
       SELECT json_extract(e.attributes_json, '$.city') AS city,
              substr(o.observed_at, 1, 13) || ':00:00+00:00' AS hour_utc,
-             e.name AS weather_station,
+             GROUP_CONCAT(DISTINCT e.name) AS weather_station,
              MAX(CASE WHEN o.metric = 'air_temperature' THEN o.value END)
                AS air_temperature_c,
              MAX(CASE WHEN o.metric = 'relative_humidity' THEN o.value END)
-               AS relative_humidity_pct
+               AS relative_humidity_pct,
+             MAX(CASE WHEN o.metric = 'precipitation' THEN o.value END)
+               AS precipitation_mm,
+             MAX(CASE WHEN o.metric = 'wind_speed' THEN o.value END)
+               AS wind_speed_m_s,
+             MAX(CASE WHEN o.metric = 'wind_direction' THEN o.value END)
+               AS wind_direction_deg
       FROM latest_weather o
       JOIN entities e ON e.entity_key = o.entity_key
-      GROUP BY city, hour_utc, e.name
+      GROUP BY city, hour_utc
     ),
     plan_ranked AS (
       SELECT s.*,
@@ -122,7 +132,8 @@ def hourly_summary(database: Path) -> list[dict[str, object]]:
            r.planned_arrivals, r.planned_departures, r.planned_events,
            r.matched_change_events, r.cancelled_events, r.delayed_events,
            r.average_delay_minutes, r.maximum_delay_minutes,
-           w.air_temperature_c, w.relative_humidity_pct,
+           w.air_temperature_c, w.relative_humidity_pct, w.precipitation_mm,
+           w.wind_speed_m_s, w.wind_direction_deg,
            CASE WHEN w.city IS NULL THEN 0 ELSE 1 END AS weather_available,
            CASE WHEN r.city IS NULL THEN 0 ELSE 1 END AS rail_available,
            CASE WHEN w.city IS NOT NULL AND r.city IS NOT NULL THEN 1 ELSE 0 END AS paired

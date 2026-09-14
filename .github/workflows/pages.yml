@@ -11,7 +11,7 @@ on:
       - "config/**"
       - ".github/workflows/pages.yml"
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       collect_live:
@@ -22,7 +22,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -44,35 +44,34 @@ jobs:
           cache: pip
       - name: Install
         run: python -m pip install .
-      - name: Restore live collection state
+      - name: Restore rolling live database
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
-        uses: actions/cache/restore@v6
-        with:
-          path: runtime
-          key: signalops-state-${{ github.run_id }}
-          restore-keys: signalops-state-
-      - name: Collect live source data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download live-data \
+            --pattern signalops-live-data.tar.gz \
+            --output signalops-live-data.tar.gz || true
+          if test -f signalops-live-data.tar.gz; then
+            tar -xzf signalops-live-data.tar.gz
+          fi
+      - name: Collect due source data and enforce seven-day retention
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
         env:
           DB_API_CLIENT_ID: ${{ secrets.DB_API_CLIENT_ID }}
           DB_API_KEY: ${{ secrets.DB_API_KEY }}
           SIGNALOPS_DATA_DIR: runtime
-          SIGNALOPS_SITE_DATA: site/data/summary.json
-          SIGNALOPS_RUN_EVIDENCE: run-evidence
-        run: python scripts/collect_live.py
-      - name: Preserve live raw evidence
-        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: raw-evidence-${{ github.run_id }}
-          path: run-evidence
-          retention-days: 30
-      - name: Save live collection state
+        run: signalops sync --config config/base.toml --env-file /dev/null
+      - name: Publish rolling live database
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && success()
-        uses: actions/cache/save@v6
-        with:
-          path: runtime
-          key: signalops-state-${{ github.run_id }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tar -czf signalops-live-data.tar.gz runtime
+          gh release view live-data >/dev/null 2>&1 || \
+            gh release create live-data --title "Rolling seven-day live data" \
+              --notes "Automatically maintained SIGNAL//OPS operational data." --prerelease
+          gh release upload live-data signalops-live-data.tar.gz --clobber
       - name: Rebuild versioned evidence
         if: env.SIGNALOPS_COLLECT_LIVE != 'true' || env.SIGNALOPS_DB_READY != 'true'
         run: |
@@ -94,3 +93,27 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
+
+  report-failure:
+    needs: [build, deploy]
+    if: ${{ always() && (needs.build.result == 'failure' || needs.deploy.result == 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Open or update the pipeline incident
+        run: |
+          title="SIGNAL//OPS scheduled pipeline failure"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          issue_number="$(gh issue list --repo "${{ github.repository }}" --state open \
+            --search "${title} in:title" --json number --jq '.[0].number // empty')"
+          if test -n "$issue_number"; then
+            gh issue comment "$issue_number" --repo "${{ github.repository }}" \
+              --body "Another scheduled run failed: ${run_url}"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$title" \
+              --body "The rolling collection or Pages deployment failed. Inspect ${run_url}, follow docs/RUNBOOKS.md, and record the recovery evidence here."
+          fi

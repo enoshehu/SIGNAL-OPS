@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 
@@ -26,7 +27,8 @@ def build_parser() -> argparse.ArgumentParser:
 def adapter_for(artifact, settings):
     if artifact.source == "dwd":
         station = str(artifact.provenance["station_id"])
-        return DWDOpenDataAdapter(replace(settings.dwd, station_id=station))
+        product = str(artifact.provenance.get("product", "air_temperature"))
+        return DWDOpenDataAdapter(replace(settings.dwd, station_id=station), product=product)
     if artifact.source == "db":
         station = str(artifact.provenance["station_eva"])
         feed = str(artifact.provenance.get("feed", "plan"))
@@ -61,11 +63,11 @@ def rebuild(evidence: Path, output: Path, config: Path) -> tuple[int, int, int]:
             store.store(artifact, path, adapter.parse(artifact))
 
     catalog = load_catalog(config.resolve().parent / "datasets")
-    for dataset_key in ("dwd_weather", "db_timetables", "db_changes"):
-        normalize(database, catalog[dataset_key])
+    for definition in catalog.values():
+        normalize(database, definition)
     exported = export_hourly_csv(database, export)
 
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection:
         observations = connection.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
         events = connection.execute("SELECT COUNT(*) FROM service_events").fetchone()[0]
         violations = connection.execute("PRAGMA foreign_key_check").fetchall()

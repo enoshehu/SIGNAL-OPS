@@ -33,7 +33,7 @@
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy reveal">
         <p class="eyebrow"><span class="status-dot"></span>Rhine–Ruhr operations / four cities</p>
-        <h1 id="page-title">Two systems.<br><em>One city signal.</em></h1>
+        <h1 id="page-title"><span>Two systems.</span><br><em>One city signal.</em></h1>
         <p class="lede">Weather observations and railway movement are kept separate, matched honestly, and joined only when city and UTC hour agree.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#cities">Read the network</a>
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <aside class="control-panel reveal" aria-label="Current project state">
+      <aside class="control-panel reveal" aria-label="Current project state" aria-live="polite">
         <div class="panel-topline"><span>Live project state</span><i aria-hidden="true"></i></div>
         <strong id="project-status">Loading</strong>
         <div class="control-reading">
@@ -98,6 +98,7 @@
           </div>
           <div class="table-wrap">
             <table>
+              <caption class="visually-hidden">Railway plan and delay details by city</caption>
               <thead><tr><th>City</th><th>Plans</th><th>Matched</th><th>Mean +delay</th><th>Maximum</th></tr></thead>
               <tbody id="city-table"></tbody>
             </table>
@@ -161,7 +162,7 @@
   <footer>
     <div class="footer-brand">SIGNAL//OPS <span>v0.5</span></div>
     <p>Python · SQLite · DWD · Deutsche Bahn · GitHub Pages</p>
-    <a href="#overview">Return to signal <span aria-hidden="true">↑</span></a>
+    <a href="https://github.com/enoshehu/SIGNAL-OPS">Source and evidence</a>
   </footer>
 
   <script src="app.js?v=ruhr-signal-lab"></script>

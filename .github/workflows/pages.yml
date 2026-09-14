@@ -13,6 +13,12 @@ on:
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
+    inputs:
+      collect_live:
+        description: Collect fresh DWD and DB data before publishing
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -28,6 +34,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      SIGNALOPS_COLLECT_LIVE: ${{ github.event_name == 'schedule' || inputs.collect_live == true }}
       SIGNALOPS_DB_READY: ${{ secrets.DB_API_CLIENT_ID != '' && secrets.DB_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v7
@@ -37,15 +44,15 @@ jobs:
           cache: pip
       - name: Install
         run: python -m pip install .
-      - name: Restore scheduled collection state
-        if: github.event_name == 'schedule' && env.SIGNALOPS_DB_READY == 'true'
+      - name: Restore live collection state
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
         uses: actions/cache/restore@v6
         with:
           path: runtime
           key: signalops-state-${{ github.run_id }}
           restore-keys: signalops-state-
-      - name: Collect scheduled source data
-        if: github.event_name == 'schedule' && env.SIGNALOPS_DB_READY == 'true'
+      - name: Collect live source data
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
         env:
           DB_API_CLIENT_ID: ${{ secrets.DB_API_CLIENT_ID }}
           DB_API_KEY: ${{ secrets.DB_API_KEY }}
@@ -53,21 +60,21 @@ jobs:
           SIGNALOPS_SITE_DATA: site/data/summary.json
           SIGNALOPS_RUN_EVIDENCE: run-evidence
         run: python scripts/collect_live.py
-      - name: Preserve scheduled raw evidence
-        if: github.event_name == 'schedule' && env.SIGNALOPS_DB_READY == 'true' && always()
+      - name: Preserve live raw evidence
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && always()
         uses: actions/upload-artifact@v7
         with:
           name: raw-evidence-${{ github.run_id }}
           path: run-evidence
           retention-days: 30
-      - name: Save scheduled collection state
-        if: github.event_name == 'schedule' && env.SIGNALOPS_DB_READY == 'true' && success()
+      - name: Save live collection state
+        if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true' && success()
         uses: actions/cache/save@v6
         with:
           path: runtime
           key: signalops-state-${{ github.run_id }}
       - name: Rebuild versioned evidence
-        if: github.event_name != 'schedule' || env.SIGNALOPS_DB_READY != 'true'
+        if: env.SIGNALOPS_COLLECT_LIVE != 'true' || env.SIGNALOPS_DB_READY != 'true'
         run: |
           PYTHONPATH=src python scripts/rebuild_evidence.py
           PYTHONPATH=src python scripts/build_dashboard.py \

@@ -1,6 +1,6 @@
 # Sprint 2 — First real ingestion
 
-**Status:** ⚠️ Implementation complete; live DB verification blocked by credentials  
+**Status:** Complete; the DB access gate was resolved during Sprint 6
 **Date:** 2026-09-14  
 **Theme:** Preserve a small real source response before adding a database.
 
@@ -28,7 +28,7 @@ The source record is in [`docs/SOURCES.md`](../SOURCES.md).
 - [x] Add offline tests for URLs, credentials, parsers, storage, retries, and dry runs.
 - [x] Add `signalops ingest --source dwd|db` with `--dry-run`.
 - [x] Complete and record a live DWD ingestion.
-- [ ] Complete a live DB ingestion after credentials are provided externally.
+- [x] Complete a live DB ingestion after the application subscription became active.
 
 ## Deliberately simple design
 
@@ -87,5 +87,5 @@ export DB_API_CLIENT_ID="..."
 export DB_API_KEY="..."
 ```
 
-Do not paste credentials into documentation, Git, or chat. A non-empty timetable response is still
-required before real railway events can be analysed.
+Do not paste credentials into documentation, Git, or chat. Non-empty Rhine–Ruhr timetable
+responses were collected and analysed during Sprint 6.

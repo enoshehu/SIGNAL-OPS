@@ -13,7 +13,7 @@
 | `operational_signals` | stable rule × city/hour or source scope | Evidence for the four approved version 1.0 signal types |
 | `incidents` | incident occurrence | Open/resolved lifecycle; at most one open incident per stable signal |
 
-Version 1.0 signal types are `DELAY_OVER_20_MINUTES`, `CANCELLATION_DETECTED`,
+Current signal types are `DELAY_OVER_20_MINUTES`, `CANCELLATION_DETECTED`,
 `SOURCE_DATA_STALE`, and `SCHEMA_CHANGED`. A resolved condition may open a later incident if it is
 detected again. No machine-learning score or opaque composite severity is used.
 

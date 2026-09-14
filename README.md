@@ -1,159 +1,117 @@
 # SIGNAL//OPS
 
-> A transparent, sprint-built DataOps platform for exploring weather and railway operations
-> across the Rhine–Ruhr corridor.
+SIGNAL//OPS combines DWD weather observations and Deutsche Bahn timetable updates for Duisburg,
+Essen, Düsseldorf, and Köln. It preserves raw source files, normalizes them in SQLite, runs
+explicit quality checks, and publishes a static dashboard.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-![Sprint](https://img.shields.io/badge/sprint-6%20active-f0ad4e)
-![Region](https://img.shields.io/badge/region-Rhine--Ruhr-blue)
+[**Live dashboard**](https://enoshehu.github.io/SIGNAL-OPS/) ·
+[Data profile](docs/analysis/RHINE_RUHR_DATA_PROFILE.md) ·
+[Architecture](docs/ARCHITECTURE_AUDIT.md) ·
+[Roadmap](docs/ROADMAP.md)
 
-Real-World Weather + Railway DataOps, developed one user-directed sprint at a time.
+[![Verify](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/ci.yml/badge.svg)](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/ci.yml)
+[![Publish dashboard](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/pages.yml/badge.svg)](https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/pages.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 
-Sprints 1–5 established the architecture, real DWD ingestion, replayable SQLite storage, a shared
-data model, and inspectable quality checks. Sprint 6 scopes the case study to four city profiles:
-**Duisburg, Essen, Düsseldorf, and Köln**. DB credentials and the Timetables subscription are now
-working. Plan and change streams are stored as separate datasets and matched on stable event keys,
-but cross-source analysis remains unfinished until the weather archive overlaps the saved railway
-hour.
+## What it does
 
-```mermaid
-flowchart LR
-    K["Köln"] --- D["Düsseldorf"] --- DU["Duisburg"] --- E["Essen"]
-```
+- Downloads DWD ZIP archives and DB timetable XML without storing credentials in Git.
+- Keeps source files, retrieval metadata, and SHA-256 checksums for replay.
+- Normalizes weather observations and railway events into a small SQLite model.
+- Checks timestamps, missing values, duplicates, freshness, continuity, and schema changes.
+- Matches DB plans with change events to calculate observed delays and cancellations.
+- Builds CSV and JSON dashboard outputs, with an Excel review workbook for handoff.
 
-## Quick start
+## Current snapshot
 
-Prerequisite: Python 3.11 or newer. On the current Mac, `python3.13` is available and was used for
-verification.
+| Data | Result |
+|---|---:|
+| Weather observations | 105,600 |
+| Planned railway events | 353 |
+| Plans matched with updates | 331 |
+| Cities | 4 |
+| Automated tests | 54 |
 
-```bash
-cd ~/Desktop/SIGNAL-OPS
-PYTHONPATH=src python3.13 -m signalops status --config config/base.toml
-PYTHONPATH=src python3.13 -m unittest discover -s tests -v
-```
+The saved weather window ends on 13 September 2026 and the railway window begins on 14 September
+2026. There are no paired city-hours yet, so the project does not calculate a weather–railway
+relationship. The railway results describe one collected slice and are not performance ratings.
 
-The tests use only the standard library, so the commands above require no package downloads. For
-an editable development installation, optionally run:
-
-```bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-signalops status
-```
-
-The status command is safe: it displays configuration readiness and does not call either API.
-
-The version 1.0 dashboard is a static site under `site/`. Preview it locally with:
-
-```bash
-python3.13 -m http.server 8000 --directory site
-```
-
-The initial Excel review queue is available at
-`artifacts/data_steward_review_queue.xlsx`. GitHub workflows verify the Python package and deploy
-the static dashboard. An optional scheduled workflow collects a new four-city slice every six
-hours when the two DB credentials are configured as GitHub repository secrets. Its SQLite history
-uses an Actions cache for this student demonstration, while each run's raw evidence is retained as
-a downloadable artifact for 30 days.
-
-Preview or run the first-source downloads:
-
-```bash
-# Preview only: no network request and no file creation
-PYTHONPATH=src python3.13 -m signalops ingest --source dwd --dry-run
-
-# Download the public DWD archive and store it under data/raw/
-PYTHONPATH=src python3.13 -m signalops ingest --source dwd --city essen
-
-# DB works the same way after DB_API_CLIENT_ID and DB_API_KEY are exported
-PYTHONPATH=src python3.13 -m signalops ingest --source db --city duisburg --dry-run
-
-# Capture the current full-change feed for delay and cancellation evidence
-PYTHONPATH=src python3.13 -m signalops ingest --source db --city duisburg --db-feed changes
-
-# Verify and load a previously saved raw artifact into SQLite
-PYTHONPATH=src python3.13 -m signalops replay data/raw/dwd/YYYY-MM-DD/FILE.zip
-
-# Build canonical observations, then assess the latest imported DWD artifact
-PYTHONPATH=src python3.13 -m signalops normalize --dataset dwd_weather
-PYTHONPATH=src python3.13 -m signalops normalize --dataset db_timetables
-PYTHONPATH=src python3.13 -m signalops normalize --dataset db_changes
-PYTHONPATH=src python3.13 -m signalops quality --dataset dwd_weather --city essen
-
-# The default database is the active Rhine–Ruhr case study
-PYTHONPATH=src python3.13 -m signalops analyze
-
-# The earlier Berlin proof remains available through an explicit override
-SIGNALOPS_DATA_DIR=data PYTHONPATH=src python3.13 -m signalops status
-
-# Rebuild the committed Rhine–Ruhr evidence without network access
-PYTHONPATH=src python3.13 scripts/rebuild_evidence.py
-
-# Rebuild the static dashboard JSON from that evidence database
-PYTHONPATH=src python3.13 scripts/build_dashboard.py \
-  --database build/evidence-rebuild/signalops.sqlite
-
-# Detect the four approved signal types and open duplicate-safe local incidents
-PYTHONPATH=src python3.13 -m signalops operate
-```
-
-To use a non-default data directory or provide DB credentials, export the variables shown in
-`.env.example`. Secrets belong in the shell, a local `.env`, or a secret manager—never in Git.
-
-## Repository map
+## Architecture
 
 ```text
-config/                 versioned, non-secret settings
-docs/                   architecture and sprint record
-evidence/               credential-free source snapshots and checksums
-scripts/                reproducibility utilities
-src/signalops/domain/   source-independent records and run results
-src/signalops/ports/    contracts for data sources and sinks
-src/signalops/adapters/ DWD and Deutsche Bahn boundary implementations
-src/signalops/          configuration, orchestration, and CLI
-tests/                  offline unit tests with deterministic fakes
-site/                   static GitHub Pages dashboard
-integrations/           Jira, Confluence, Miro, and Power BI handoff assets
-artifacts/               Excel data-steward review queue
+DWD + Deutsche Bahn
+        ↓
+raw files + checksums
+        ↓
+adapters → SQLite → quality rules
+        ↓
+city-hour analysis → CSV / JSON
+        ↓
+GitHub Pages + review exports
 ```
 
-## Project documentation
+The implementation uses Python's standard library and SQLite. DWD and DB remain source-specific
+at the adapter boundary; the storage, quality, analysis, and publishing layers share common
+interfaces.
 
-| Document | Purpose |
+## Run locally
+
+Requires Python 3.11 or newer.
+
+```bash
+git clone https://github.com/enoshehu/SIGNAL-OPS.git
+cd SIGNAL-OPS
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+python -m unittest discover -s tests -v
+```
+
+Rebuild the committed evidence and open the dashboard:
+
+```bash
+python scripts/rebuild_evidence.py
+python scripts/build_dashboard.py --database build/evidence-rebuild/signalops.sqlite
+python -m http.server 8000 --directory site
+```
+
+Then open `http://localhost:8000`.
+
+Live DB collection requires `DB_API_CLIENT_ID` and `DB_API_KEY`. Copy `.env.example` to `.env`,
+add the credentials locally, and never commit that file. Environment variables override TOML
+configuration.
+
+## Useful commands
+
+```bash
+signalops status
+signalops ingest --source dwd --city essen
+signalops ingest --source db --city essen --db-feed plan
+signalops normalize --dataset dwd_weather
+signalops quality --dataset dwd_weather --city essen
+signalops analyze
+signalops operate
+```
+
+## Repository guide
+
+| Path | Contents |
 |---|---|
-| [Roadmap](docs/ROADMAP.md) | Full delivery map, sprint checklists, milestones, and release path |
-| [Build and architecture log](docs/BUILD_LOG.md) | Decisions, completed work, verification, and current limitations |
-| [Data sources](docs/SOURCES.md) | Official contracts, access notes, and attribution |
-| [Documentation hub](docs/README.md) | How planning and sprint updates are organized |
-| [Sprint update template](docs/sprints/SPRINT_TEMPLATE.md) | Repeatable format for every future sprint |
-| [Sprint 2 record](docs/sprints/SPRINT-02-FIRST-INGESTION.md) | First-source ingestion and resolved DB access gate |
-| [Sprint 3 record](docs/sprints/SPRINT-03-STORAGE-REPLAY.md) | SQLite schema, replay behavior, and verification evidence |
-| [Sprint 4 record](docs/sprints/SPRINT-04-UNIVERSAL-MODEL.md) | Shared entities, observations, events, and lineage |
-| [Sprint 5 record](docs/sprints/SPRINT-05-DATA-QUALITY.md) | Quality rules, observed findings, and schema-drift limits |
-| [Sprint 6 record](docs/sprints/SPRINT-06-RHINE-RUHR-SCOPE.md) | Four-city scope, verified station map, and remaining analysis gate |
-| [Regional data profile](docs/analysis/RHINE_RUHR_DATA_PROFILE.md) | Measured coverage, quality findings, and current join limitation |
-| [Data dictionary](docs/DATA_DICTIONARY.md) | Canonical tables and city-hour export fields |
-| [Architecture audit](docs/ARCHITECTURE_AUDIT.md) | Student-focused simplification, criticism, and feasibility boundaries |
-| [Vision implementation map](docs/VISION_IMPLEMENTATION.md) | Requirement-by-requirement implementation truth |
-| [Version 1.0 scope](docs/VERSION_1_SCOPE.md) | Binding first-release boundary and future-version plan |
-| [Tooling deliverables](docs/TOOLING_DELIVERABLES.md) | Bounded roles for Jira, Confluence, Miro, Power BI, and Excel |
-| [Reproducible evidence](evidence/README.md) | Offline reconstruction of measured Sprint 6 results |
+| `src/signalops/` | ingestion, storage, quality, analysis, and operations code |
+| `tests/` | offline unit and integration-style tests |
+| `config/` | non-secret source and dataset configuration |
+| `evidence/` | public source snapshots used for reproducible results |
+| `site/` | static GitHub Pages dashboard |
+| `docs/` | methods, source contracts, decisions, and roadmap |
+| `integrations/` | optional Jira, Confluence, Miro, and Power BI handoff files |
 
-## Data sources
+## Project status
 
-- DWD Open Data / Climate Data Center: public HTTPS data for four configured weather stations.
-- Deutsche Bahn Timetables API: four verified Hauptbahnhof profiles; credentials stay external.
+Version `0.5.0` is a working pre-release. The immediate release gate is an overlapping DWD/DB
+window, followed by the final accessibility, security, and claim-to-evidence review. The complete
+long-term requirements remain in [PROJECT_VISION.md](docs/PROJECT_VISION.md), which is preserved as
+the original project brief.
 
-The checked-in URLs are configuration defaults, not a claim that availability or API contracts
-will never change. Sprint 2 validated the official contracts and recorded one reproducible DWD
-sample; Sprint 6 verified authenticated DB access and introduced the regional profiles.
-
-## Current boundary
-
-The regional snapshot contains verified DWD observations plus separate DB plan and change streams
-for all four cities. It can be rebuilt offline from `evidence/raw/`. The rail-only export describes
-matched delays and cancellations for the saved slice. The source dates still do not overlap:
-weather ends on 2026-09-13 while rail begins on 2026-09-14, so the export correctly reports zero
-paired city-hours. The dashboard reports this limitation directly. No weather relationship,
-causal result, or production-grade reliability claim is presented as complete.
+Data sources and licences: [SOURCES.md](docs/SOURCES.md).
+Canonical fields: [DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md).
+Reproduction notes: [evidence/README.md](evidence/README.md).

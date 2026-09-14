@@ -1,4 +1,4 @@
-# SIGNAL//OPS version 1.0
+# SIGNAL//OPS version 1 draft
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-"""Small operational signal and incident lifecycle for version 1.0."""
+"""Small operational signal and incident lifecycle."""
 
 from __future__ import annotations
 
@@ -163,17 +163,18 @@ def resolve_incident(database: Path, incident_id: int, resolution: str) -> None:
 
 
 def stored_quality_signals(database: Path, *, detected_at: datetime) -> list[Signal]:
-    """Read only the latest stored quality run for each dataset."""
+    """Read the latest stored quality run for each dataset and station."""
     query = """
     WITH latest AS (
-      SELECT dataset_key, MAX(run_id) AS run_id FROM quality_runs GROUP BY dataset_key
+      SELECT q.dataset_key, a.source, a.scope_key, MAX(q.run_id) AS run_id
+      FROM quality_runs q
+      JOIN artifact_imports a ON a.id = q.import_id
+      GROUP BY q.dataset_key, a.source, a.scope_key
     )
-    SELECT q.dataset_key, a.source || ':' || a.scope_key AS entity_key,
+    SELECT l.dataset_key, l.source || ':' || l.scope_key AS entity_key,
            r.rule_key, r.status, r.records_checked, r.records_failed, r.details_json
     FROM latest l
-    JOIN quality_runs q ON q.run_id = l.run_id
-    JOIN quality_results r ON r.run_id = q.run_id
-    JOIN artifact_imports a ON a.id = q.import_id
+    JOIN quality_results r ON r.run_id = l.run_id
     WHERE r.rule_key IN ('freshness', 'schema_drift') AND r.status != 'pass'
     """
     try:

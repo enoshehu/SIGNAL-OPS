@@ -1,6 +1,6 @@
 # Sprint 4 — Universal model
 
-**Status:** Complete for the available DWD data; DB live verification remains external  
+**Status:** Complete; DB live verification was added during Sprint 6
 **Date:** 2026-09-14
 
 ## Delivered
@@ -25,6 +25,5 @@ These are local row counts and source coverage, not quality or performance score
 
 ## Boundary
 
-Quality, drift, signals and operational workflows remain later sprints. Real railway service-event
-verification still requires DB Marketplace credentials.
-
+Quality and operational workflows were added in later sprints. Sprint 6 verified the railway model
+with preserved DB plan and change responses.

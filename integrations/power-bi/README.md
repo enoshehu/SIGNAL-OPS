@@ -1,4 +1,4 @@
-# Power BI version 1.0 handoff
+# Power BI version 1 draft
 
 Use `rail_snapshot.csv` only as the initial layout source. It reproduces the measured one-slice
 railway evidence in the regional data profile; it contains no Weather × Railway finding because

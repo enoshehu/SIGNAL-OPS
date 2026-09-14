@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-09-14T20:21:59.075423+00:00",
+  "status": "COLLECTING EVIDENCE",
+  "pairedHours": 0,
+  "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
+  "cities": [
+    {
+      "key": "duesseldorf",
+      "name": "Düsseldorf",
+      "plans": 95,
+      "matched": 95,
+      "cancelled": 0,
+      "delayed": 66,
+      "meanDelay": 12.8,
+      "maxDelay": 84.0
+    },
+    {
+      "key": "duisburg",
+      "name": "Duisburg",
+      "plans": 83,
+      "matched": 61,
+      "cancelled": 0,
+      "delayed": 47,
+      "meanDelay": 19.9,
+      "maxDelay": 83.0
+    },
+    {
+      "key": "essen",
+      "name": "Essen",
+      "plans": 51,
+      "matched": 51,
+      "cancelled": 0,
+      "delayed": 35,
+      "meanDelay": 5.2,
+      "maxDelay": 27.0
+    },
+    {
+      "key": "koeln",
+      "name": "Köln",
+      "plans": 124,
+      "matched": 124,
+      "cancelled": 2,
+      "delayed": 73,
+      "meanDelay": 13.3,
+      "maxDelay": 90.0
+    }
+  ],
+  "sources": [
+    {
+      "name": "DWD Weather",
+      "state": "READY",
+      "detail": "Latest archive retained"
+    },
+    {
+      "name": "DB Plans",
+      "state": "READY",
+      "detail": "353 planned events"
+    },
+    {
+      "name": "DB Changes",
+      "state": "READY",
+      "detail": "331 matched events"
+    },
+    {
+      "name": "Paired analysis",
+      "state": "WAITING",
+      "detail": "0 overlapping city-hours"
+    }
+  ]
+}

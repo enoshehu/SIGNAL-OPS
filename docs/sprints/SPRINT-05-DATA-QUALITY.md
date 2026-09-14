@@ -1,6 +1,6 @@
 # Sprint 5 — Data quality and schema drift
 
-**Status:** Complete for the available DWD data; DB live evidence remains blocked  
+**Status:** Complete for the version 0.5 scope
 **Date:** 2026-09-14
 
 ## Goal
@@ -76,8 +76,7 @@ results and 73 affected record identifiers.
 
 - Schema drift currently describes the parsed JSON payload. A DWD header change rejected by the
   parser, or a structural change inside DB XML, needs a source-contract check in a later sprint.
-- No live DB quality result is claimed because DB Marketplace credentials and a real XML artifact
-  are not available.
+- DB timestamp checks were later run against preserved Sprint 6 plan and change responses.
 - Freshness is evaluated when the command runs and may change naturally over time.
 - A numeric trust score is deliberately absent. Individual facts are easier to explain and audit.
 

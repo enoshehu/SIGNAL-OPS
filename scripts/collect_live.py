@@ -56,11 +56,20 @@ def main() -> int:
     for dataset_key in ("dwd_weather", "db_timetables", "db_changes"):
         normalize(database, catalog[dataset_key])
 
+    failed_checks: list[str] = []
     for city in settings.cities:
         for dataset_key in ("dwd_weather", "db_timetables", "db_changes"):
             definition = catalog[dataset_key]
             scope = city.dwd_station_id if definition.adapter == "dwd" else city.db_eva_number
-            assess(database, definition, entity_key=f"{definition.adapter}:{scope}")
+            results = assess(database, definition, entity_key=f"{definition.adapter}:{scope}")
+            failed_checks.extend(
+                f"{city.key}/{dataset_key}/{result.rule}"
+                for result in results
+                if result.status == "failure"
+            )
+
+    if failed_checks:
+        raise RuntimeError("Quality failures: " + ", ".join(failed_checks))
 
     rows = hourly_summary(database)
     output = Path(os.getenv("SIGNALOPS_SITE_DATA", "site/data/summary.json"))

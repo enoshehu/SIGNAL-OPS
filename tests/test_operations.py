@@ -119,6 +119,40 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(signals[0].entity_key, "dwd:01303")
         self.assertEqual(signals[0].message, "latest")
 
+    def test_reads_latest_source_health_for_each_station(self) -> None:
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "quality.sqlite"
+            with closing(sqlite3.connect(database)) as connection, connection:
+                connection.executescript(
+                    """
+                    CREATE TABLE artifact_imports (
+                      id INTEGER PRIMARY KEY, source TEXT, scope_key TEXT
+                    );
+                    CREATE TABLE quality_runs (
+                      run_id INTEGER PRIMARY KEY, dataset_key TEXT, import_id INTEGER,
+                      executed_at TEXT
+                    );
+                    CREATE TABLE quality_results (
+                      result_id INTEGER PRIMARY KEY, run_id INTEGER, rule_key TEXT,
+                      status TEXT, records_checked INTEGER, records_failed INTEGER,
+                      details_json TEXT
+                    );
+                    INSERT INTO artifact_imports VALUES (1, 'dwd', '01303');
+                    INSERT INTO artifact_imports VALUES (2, 'dwd', '13670');
+                    INSERT INTO quality_runs VALUES (1, 'dwd_weather', 1, '2026-09-14');
+                    INSERT INTO quality_runs VALUES (2, 'dwd_weather', 2, '2026-09-14');
+                    INSERT INTO quality_results VALUES
+                      (1, 1, 'freshness', 'warning', 10, 1, '{"reason":"Essen stale"}'),
+                      (2, 2, 'freshness', 'warning', 10, 1, '{"reason":"Duisburg stale"}');
+                    """
+                )
+
+            signals = stored_quality_signals(
+                database, detected_at=datetime(2026, 9, 15, tzinfo=UTC)
+            )
+
+        self.assertEqual({signal.entity_key for signal in signals}, {"dwd:01303", "dwd:13670"})
+
 
 if __name__ == "__main__":
     unittest.main()

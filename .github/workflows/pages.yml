@@ -5,7 +5,13 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "evidence/**"
+      - "scripts/**"
+      - "src/**"
+      - "config/**"
       - ".github/workflows/pages.yml"
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,13 +22,54 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: python -m pip install .
+      - name: Restore scheduled collection state
+        if: github.event_name == 'schedule'
+        uses: actions/cache/restore@v6
+        with:
+          path: runtime
+          key: signalops-state-${{ github.run_id }}
+          restore-keys: signalops-state-
+      - name: Collect scheduled source data
+        if: github.event_name == 'schedule'
+        env:
+          DB_API_CLIENT_ID: ${{ secrets.DB_API_CLIENT_ID }}
+          DB_API_KEY: ${{ secrets.DB_API_KEY }}
+          SIGNALOPS_DATA_DIR: runtime
+          SIGNALOPS_SITE_DATA: site/data/summary.json
+          SIGNALOPS_RUN_EVIDENCE: run-evidence
+        run: python scripts/collect_live.py
+      - name: Preserve scheduled raw evidence
+        if: github.event_name == 'schedule' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: raw-evidence-${{ github.run_id }}
+          path: run-evidence
+          retention-days: 30
+      - name: Save scheduled collection state
+        if: github.event_name == 'schedule' && success()
+        uses: actions/cache/save@v6
+        with:
+          path: runtime
+          key: signalops-state-${{ github.run_id }}
+      - name: Rebuild versioned evidence
+        if: github.event_name != 'schedule'
+        run: |
+          PYTHONPATH=src python scripts/rebuild_evidence.py
+          PYTHONPATH=src python scripts/build_dashboard.py \
+            --database build/evidence-rebuild/signalops.sqlite
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

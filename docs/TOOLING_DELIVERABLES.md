@@ -1,7 +1,7 @@
-# Version 1.0 tooling deliverables
+# External-tool deliverables
 
-This file defines the bounded role of each external tool. URLs are added only after the external
-artifact exists. Do not store access tokens or private workspace identifiers here.
+These are optional review outputs, not application dependencies. Links are added only after an
+artifact exists. Tokens and private workspace identifiers do not belong in this repository.
 
 ## Jira
 

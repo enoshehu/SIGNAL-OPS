@@ -1,14 +1,13 @@
 # SIGNAL//OPS build and architecture log
 
-This is the durable project record. Update it in every sprint with decisions, commands, completed
-work, verification evidence, limitations, and the next backlog. Dates use the Europe/Berlin date.
+This is the chronological project record. Sprint statuses describe the state at that time; use
+`ROADMAP.md` for current status. Dates use the Europe/Berlin date.
 
 ## Product intent
 
-SIGNAL//OPS is a portfolio-grade DataOps application that will ingest real German weather and
+SIGNAL//OPS is a DataOps application that ingests German weather and
 railway data, preserve source provenance, normalize it into a shared model, assess data quality,
-and expose operationally useful outputs. The project must stay honest: measured values will be
-reported only after a reproducible live run, never invented for presentation.
+and exposes operational outputs. Values are reported only after a reproducible run.
 
 ## Architecture
 
@@ -115,7 +114,7 @@ used by the Sprint 2 raw-download path and will be revisited when parsed storage
 
 - Status: accepted, Sprint 3.
 - Decision: use one local SQLite file with `artifact_imports` and `parsed_raw_records` tables.
-- Why: SQLite is included with Python, easy for a student to inspect, transactional, and enough for
+- Why: SQLite is included with Python, easy to inspect, transactional, and enough for
   the current single-user data volume.
 - Consequence: PostgreSQL, ORMs, concurrency tuning, and migrations are deferred until evidence
   shows they are useful.
@@ -132,7 +131,7 @@ used by the Sprint 2 raw-download path and will be revisited when parsed storage
 - Status: accepted, Sprint 4.
 - Decision: use shared source, dataset, entity, observation, and service-event tables while
   retaining the parsed source payload on each canonical row.
-- Why: weather measurements and railway events need common lineage without pretending their
+- Why: weather measurements and railway events need common lineage without forcing their
   domain fields are identical.
 
 ### ADR-014 — Quality evidence instead of a numeric trust score
@@ -228,7 +227,7 @@ Date: 2026-09-14
 - Added `docs/ROADMAP.md` with a ten-sprint delivery map and checklists.
 - Added `docs/README.md` as the documentation landing page.
 - Added a factual Sprint 1 record and a reusable future-sprint template.
-- Updated the root README with GitHub-friendly navigation, honest status badges, and a clear
+- Updated the root README with GitHub-friendly navigation, status badges, and a clear
   current-project boundary.
 - Added `.DS_Store` to ignored local artifacts.
 - No application behavior, live-data status, or production metric changed in this update.

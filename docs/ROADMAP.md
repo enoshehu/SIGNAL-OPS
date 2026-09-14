@@ -1,263 +1,111 @@
-# SIGNAL//OPS roadmap
+# Roadmap
 
-> Status: **Sprint 6 active · Rhine–Ruhr city profiles implemented**
+`PROJECT_VISION.md` is the unchanged long-term brief. This roadmap turns that vision into smaller
+releases; it does not remove any requirement from it.
 
-The binding first-release boundary is [Version 1.0 scope](VERSION_1_SCOPE.md). The original
-project vision remains long-term intent; later data domains are not part of version 1.0.
-
-This roadmap shows the complete intended journey from a tested Python foundation to a
-recruiter-ready Weather × Railway DataOps case study. It is a living plan: later sprint scope may
-change after source validation and user review. An unchecked box means planned—not implemented.
-
-## North-star outcome
-
-Build a reproducible system that can answer a defensible question:
-
-> What observable relationships exist between weather conditions and railway operations for a
-> clearly defined place and time window?
-
-The project will preserve raw-source provenance, distinguish observed facts from derived results,
-and avoid causal claims that the available data cannot support.
-
-## Delivery map
+## Current state — 0.5.0
 
 ```mermaid
 flowchart LR
-    S1["✅ Sprint 1<br/>Foundation"] --> S2["✅ Sprint 2<br/>Live source access"]
-    S2 --> S3["✅ Sprint 3<br/>Storage"]
-    S3 --> S4["✅ Sprint 4<br/>Canonical model"]
-    S4 --> S5["✅ Sprint 5<br/>Data quality"]
-    S5 --> S6["🟡 Sprint 6<br/>Rhine–Ruhr analysis"]
-    S6 --> S7["⬜ Sprint 7<br/>Operations"]
-    S7 --> S8["⬜ Sprint 8<br/>Analytics UX"]
-    S8 --> S9["⬜ Sprint 9<br/>Automation"]
-    S9 --> S10["⬜ Sprint 10<br/>Portfolio release"]
+    A[Public sources] --> B[Raw evidence]
+    B --> C[SQLite model]
+    C --> D[Quality rules]
+    D --> E[Signals and incidents]
+    C --> F[City-hour analysis]
+    F --> G[GitHub Pages]
 ```
 
-## Milestone view
+| Area | Status |
+|---|---|
+| DWD and DB ingestion | Complete for four Rhine–Ruhr cities |
+| Replay and canonical storage | Complete |
+| Data-quality rules and schema checks | Complete for version 0.5 scope |
+| DB plan/change matching | Complete for the saved railway slice |
+| Static dashboard and CI | Complete |
+| Weather × railway comparison | Waiting for overlapping source hours |
+| External collaboration tools | Templates only |
 
-| Milestone | Sprints | Outcome | Status |
-|---|---:|---|---|
-| M1 — Trustworthy foundation | 1–2 | Tested architecture and first reproducible source pulls | Complete |
-| M2 — Governed data product | 3–5 | Durable layers, shared model, and evidence-backed quality rules | Complete for DWD |
-| M3 — Operational insight | 6–7 | Joined Weather × Rail analysis and incident workflow | Planned |
-| M4 — Recruiter-ready product | 8–10 | Usable reporting, automation, documentation, and demo narrative | Planned |
+## Version 1.0 — finish the case study
 
-## Sprint 1 — Foundation
+### Data
 
-**Status:** ✅ Complete  
-**Record:** [Sprint 1 — Foundation](sprints/SPRINT-01-FOUNDATION.md)  
-**Objective:** Establish a runnable architecture whose core logic is independent of DWD, Deutsche
-Bahn, HTTP libraries, and storage technologies.
+- [ ] Collect a DWD archive covering the saved DB timetable hour.
+- [ ] Rebuild the city-hour export with at least one paired hour per city.
+- [ ] Profile missingness, outliers, and selection limits in the paired window.
+- [ ] Publish descriptive comparisons without causal claims.
 
-- [x] Create an installable Python 3.11+ package using a `src` layout.
-- [x] Define typed, immutable raw-record and ingestion-result models.
-- [x] Define source-adapter and record-sink boundaries.
-- [x] Add DWD and DB adapter shells with explicit readiness behavior.
-- [x] Load non-secret TOML configuration with environment-variable overrides.
-- [x] Keep DB credentials outside version control.
-- [x] Add source-independent ingestion orchestration.
-- [x] Add a no-network status command.
-- [x] Add deterministic offline tests.
-- [x] Initialize Git with `main` as the initial branch.
-- [x] Document architecture, setup, limitations, and next steps.
+### Operations
 
-**Exit evidence:** six offline tests pass; status reports DWD configuration ready, DB credentials
-required, and confirms that no network calls were made.
+- [x] Detect delay, cancellation, stale-source, and schema-change signals.
+- [x] Store duplicate-safe local incidents.
+- [ ] Add one controlled failure and documented recovery.
+- [ ] Add short runbooks for source, credential, schema, and replay failures.
 
-## Sprint 2 — First real ingestion
+### Web and automation
 
-**Status:** ✅ Complete  
-**Record:** [Sprint 2 — First real ingestion](sprints/SPRINT-02-FIRST-INGESTION.md)  
-**Objective:** Retrieve one deliberately narrow, reproducible slice from each real source and
-preserve the responses with provenance.
+- [x] Publish the static dashboard with GitHub Pages.
+- [x] Verify Python 3.11–3.13 in GitHub Actions.
+- [x] Rebuild dashboard data from committed evidence before deployment.
+- [x] Keep scheduled collection credentials in GitHub Secrets.
+- [ ] Add an end-to-end test for evidence rebuild and dashboard generation.
+- [ ] Complete keyboard, contrast, mobile, and reduced-motion checks.
+- [ ] Add a dashboard screenshot to the README.
 
-- [x] Verify current official DWD and DB contracts, terms, authentication, and rate limits.
-- [x] Select one DWD station/product and one DB station/time window.
-- [x] Introduce an HTTP boundary with timeouts, bounded retries, and typed failures.
-- [x] Implement DWD download and parsing for the approved slice.
-- [x] Implement DB planned-timetable retrieval and XML parsing for the approved slice.
-- [x] Add atomic raw-response storage with retrieval metadata and checksums.
-- [x] Add small source fixtures and parser/contract tests.
-- [x] Add `signalops ingest --source ...` and a safe dry-run mode.
-- [x] Run and record a permitted live DWD ingestion.
-- [x] Run and record a permitted live DB ingestion after subscribing the application.
+### Release
 
-**Exit gate:** both sources produce reproducible raw artifacts or the sprint records a verified
-source limitation and an owner-approved alternative.
+- [ ] Reconcile every public number with the committed evidence.
+- [ ] Run secret, licence, and dependency checks.
+- [ ] Add a concise demo script and architecture/lineage diagram.
+- [ ] Tag `v1.0.0` and publish release notes.
 
-## Sprint 3 — Durable storage and replay
+## Later releases
 
-**Status:** ✅ Complete  
-**Record:** [Sprint 3 — Storage and replay](sprints/SPRINT-03-STORAGE-REPLAY.md)  
-**Objective:** Make ingested data durable, queryable, idempotent, and replayable.
+All items below come from the long-term vision and remain in scope.
 
-- [x] Choose SQLite after inspecting the real DWD and fixture DB payloads.
-- [x] Keep raw bytes separate from parsed, source-shaped staged records.
-- [x] Record artifact checksum, source timestamps, local path, and imported row count.
-- [x] Prevent duplicate replay using source plus SHA-256 identity.
-- [x] Create a small version-one schema using standard SQLite DDL.
-- [x] Add a replay command that verifies but never mutates raw artifacts.
-- [x] Test checksum failure, duplicate records, version retention, and transaction rollback.
+### 1.1 — reliability
 
-**Exit gate:** the same raw input can be replayed deterministically without duplication or loss.
+- Durable run history beyond Actions cache retention.
+- Recovery tests, actionable notifications, and reviewed correction import.
+- Stronger raw-contract checks for DWD files and DB XML.
+- Source/API health history with documented service targets.
 
-**Exit evidence:** the real DWD artifact inserted 13,200 staged records on first replay and zero on
-the second; SQLite retained one artifact import and 13,200 records.
+### 2.0 — energy mission
 
-## Sprint 4 — Canonical Weather × Railway model
+- Add a verified SMARD adapter and normalized energy time series.
+- Implement interval uniqueness, unit validity, and timeline continuity.
+- Add price, residual-load, and forecast-deviation signals.
+- Measure which existing platform components are genuinely reusable.
 
-**Status:** ✅ Complete for DWD; DB model fixture-tested  
-**Record:** [Sprint 4 — Universal model](sprints/SPRINT-04-UNIVERSAL-MODEL.md)  
-**Objective:** Normalize heterogeneous source payloads into documented analytical entities.
+### 2.1 — air-quality mission
 
-- [x] Define source, dataset, station entity, observation, and service-event tables.
-- [x] Preserve source payloads alongside normalized values and units.
-- [x] Standardize DWD observation timestamps in UTC.
-- [x] Resolve DWD and rail locations using a documented city-proxy matching rule.
-- [x] Link canonical rows to dataset, entity, and artifact import IDs.
-- [x] Add unit, boundary, and representative fixture tests.
-- [x] Publish a data dictionary.
-- [ ] Publish an example lineage trace.
+- Add a verified UBA adapter and station catalogue.
+- Implement measurement, station, unit, and missing-data checks.
+- Add PM10 and NO2 investigation views and signals.
 
-**Exit gate:** a reviewer can trace every curated value back to its raw source and transformation.
+### 3.0 — multi-domain operations
 
-## Sprint 5 — Data-quality and trust layer
+- Add Destatis and revision-aware public-statistics ingestion.
+- Add a combined source-health and incident view.
+- Add actions, decisions, ownership, and operational KPI history.
+- Add a hosted query API if the static interface is no longer sufficient.
+- Evaluate a numeric trust score only with documented, validated weights.
+- Improve source onboarding while retaining adapter-specific code and tests.
 
-**Status:** ✅ Complete for DWD; DB timestamp rule verified on live data
-**Record:** [Sprint 5 — Data quality and schema drift](sprints/SPRINT-05-DATA-QUALITY.md)  
-**Objective:** Detect and explain whether the data is fit for analysis.
+## Supporting tools
 
-- [x] Define quality dimensions: validity, completeness, uniqueness, freshness, and consistency.
-- [x] Implement DWD-specific and shared validation rules.
-- [x] Classify results as pass, warning, or failure with reasons and counts.
-- [x] Store rule results and affected record identifiers.
-- [x] Add parsed-schema drift and stale-observation detection.
-- [x] Review trust scoring and deliberately omit an unjustified numeric formula.
-- [x] Add tests for known bad data and boundary conditions.
-- [x] Verify DB timestamp quality behavior with real permitted timetable artifacts.
+Excel, Power BI, Jira, Confluence, and Miro remain presentation and collaboration outputs. They do
+not sit in the runtime path. Version 1 requires only small, reviewable examples; fuller automation
+belongs in later releases.
 
-**Exit evidence:** the real DWD import has eight inspectable rule results and 73 linked affected
-record identifiers; no unsupported quality percentage is presented as fact.
+## Completed sprint record
 
-## Sprint 6 — Rhine–Ruhr Weather × Railway analysis
+| Sprint | Result | Detail |
+|---:|---|---|
+| 1 | Foundation | Package, configuration, ports, and tests |
+| 2 | Source access | DWD and DB adapters with preserved raw files |
+| 3 | Replay | Idempotent SQLite imports and lineage |
+| 4 | Canonical model | Sources, entities, observations, and railway events |
+| 5 | Quality | Persisted rules, affected records, and schema snapshots |
+| 6 | Rhine–Ruhr | Four-city data, plan/change matching, analysis, and Pages preview |
 
-**Status:** 🟡 Active  
-**Record:** [Sprint 6 — Rhine–Ruhr scope](sprints/SPRINT-06-RHINE-RUHR-SCOPE.md)  
-**Objective:** Produce a reproducible descriptive analysis of the joined sources.
-
-- [x] Scope the project to Duisburg, Essen, Düsseldorf, and Köln.
-- [x] Verify four DB Hauptbahnhof EVA numbers through the live station endpoint.
-- [x] Verify four active DWD hourly-temperature archives.
-- [x] Add one selectable city option shared by both adapters.
-- [x] Preserve city/station provenance through raw save and replay.
-- [x] Route canonical records to the correct city entity.
-- [x] Capture, replay, and normalize one non-empty DB plan slice for all four cities.
-- [x] Capture, replay, and normalize the four current DWD archives in an isolated database.
-- [x] Run quality checks separately by source and city.
-- [x] Define the city-hour grain and exact UTC-hour matching rule.
-- [x] Export unmatched source-hours without converting missing rail data to zero.
-- [x] Ingest DB full-change snapshots for all four cities.
-- [x] Match plan and change events without dropping earlier plan hours.
-- [x] Derive delays and cancellations only for matched events.
-- [ ] Collect an overlapping date before calculating Weather × Railway results.
-- [x] Define the final analytical question and evaluation-window rule before calculating results.
-- [x] Establish the baseline and comparison-group design without calculating results early.
-- [x] Join sources with documented spatial and temporal rules.
-- [ ] Explore missingness, coverage, outliers, and selection bias.
-- [ ] Calculate only metrics supported by retrieved data.
-- [ ] Separate association from causal interpretation.
-- [ ] Produce reproducible tables and visual-ready datasets.
-
-**Exit gate:** all findings link to code, source data, assumptions, and quality caveats.
-
-## Sprint 7 — Operational workflow
-
-**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
-**Objective:** Turn failed or degraded data runs into an explainable operating process.
-
-- [ ] Define run states, severity levels, and incident triggers.
-- [ ] Add structured logs and correlation/run identifiers.
-- [x] Create a duplicate-safe local incident record and open/resolved lifecycle.
-- [ ] Write runbooks for source outage, credential failure, drift, and replay.
-- [ ] Add a decision log and ownership model.
-- [x] Design optional Jira/Confluence mappings without making them runtime dependencies.
-- [ ] Demonstrate one controlled failure and recovery scenario.
-
-**Exit gate:** a new operator can diagnose a simulated failure using only repository artifacts.
-
-## Sprint 8 — Analytics and review experience
-
-**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
-**Objective:** Present source health, quality, and Weather × Rail findings clearly.
-
-- [ ] Define audiences and decisions for each page before choosing visuals.
-- [x] Build a static overview and investigation experience with honest evidence state.
-- [ ] Add filters for time, location, source, and quality state.
-- [x] Include metric definitions, refresh timestamps, and caveats.
-- [x] Add an initial formatted Excel review queue for investigation workflows.
-- [ ] Validate accessibility, readability, and screenshot quality.
-- [x] Record GitHub Pages as the version 1.0 delivery tool.
-
-**Exit gate:** the interface answers its defined questions without hiding uncertainty or provenance.
-
-## Sprint 9 — Automation and reliability
-
-**Status:** 🟡 Partially implemented ahead of the Sprint 6 overlap gate
-**Objective:** Make verification and scheduled operation repeatable.
-
-- [x] Add CI for tests, linting, and packaging checks.
-- [ ] Add unit, contract, integration, and end-to-end test boundaries.
-- [x] Add an optional six-hour GitHub Actions collection and Pages workflow.
-- [x] Add secrets-safe runtime configuration.
-- [ ] Add health checks and actionable failure notifications.
-- [x] Document demo-grade cache retention, 30-day raw artifacts, and production limitations.
-- [ ] Measure runtime behavior from actual runs before setting targets.
-
-**Exit gate:** a clean checkout can be verified automatically, and operational failures are visible.
-
-## Sprint 10 — Portfolio release
-
-**Status:** ⬜ Planned  
-**Objective:** Package the work as a technically credible, easy-to-demo case study.
-
-- [ ] Finalize architecture and lineage diagrams.
-- [ ] Add verified screenshots or a short demo walkthrough.
-- [ ] Publish a concise problem → approach → evidence → limitation narrative.
-- [ ] Document reproducible demo setup and teardown.
-- [ ] Perform security, licensing, privacy, and secret scans.
-- [ ] Create tagged release notes and a changelog.
-- [ ] Prepare defensible CV bullets and an interview walkthrough.
-- [ ] Complete a final claim-versus-evidence audit.
-
-**Exit gate:** every public claim is reproducible, attributable, and explainable in an interview.
-
-## Candidate parking lot
-
-These ideas are intentionally outside the committed sprint sequence. They require user approval
-and evidence that they add value.
-
-- [ ] Additional weather stations, rail locations, or longer time ranges.
-- [ ] Additional domains such as energy, air quality, or economic indicators.
-- [ ] PostgreSQL or cloud deployment.
-- [ ] Advanced anomaly detection or forecasting.
-- [ ] Automated Jira/Confluence integration.
-- [ ] Server-hosted query API beyond the static Pages interface.
-
-## How roadmap updates work
-
-1. The project owner selects and approves one sprint.
-2. The sprint gets its own file under `docs/sprints/` using the template.
-3. Work is implemented and verified; checkboxes change only when evidence exists.
-4. Scope changes are recorded under **Changes from plan**, not silently rewritten.
-5. Results and architectural decisions are appended to `BUILD_LOG.md`.
-6. This roadmap is updated with status and links.
-7. Work stops at the sprint boundary for owner review.
-
-## Status legend
-
-- ✅ **Complete** — implemented and verified.
-- 🟡 **Active** — explicitly approved and currently in progress.
-- ⬜ **Planned** — proposed future work; not yet started.
-- ⏸️ **Deferred** — consciously moved out of the current delivery sequence.
-- ⚠️ **Blocked** — cannot proceed without a documented dependency or decision.
+Detailed sprint records remain under `docs/sprints/` as implementation history.

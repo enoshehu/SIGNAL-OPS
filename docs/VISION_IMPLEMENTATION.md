@@ -15,7 +15,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | City-scoped quality | Complete | Latest import and checks resolve by station scope instead of global source order |
 | Weather × Railway city-hour export | Partial | Export works and preserves unmatched hours; current sources have zero overlapping hours |
 | Raw/Bronze and parsed-raw layers | Complete | Raw archive plus SQLite replay tables; credential-free evidence is committed |
-| Validation and quality results | Partial by source | Full configured DWD suite; DB currently checks event timestamp usability |
+| Validation and quality results | Partial by source | Full configured DWD suite; DB checks timestamps, entity integrity, and change-feed schema |
 | Data Source Health | Partial | Scheduled runs evaluate quality; the dashboard currently shows availability only |
 | Numeric Data Trust Score | Planned after validation | Current outputs show individual rule evidence |
 | Schema drift | Complete at parsed-payload layer | Baseline field/type fingerprints; raw contract drift remains later work |
@@ -25,11 +25,11 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Excel review queue | Partial | Initial formatted workbook exists; automated regeneration remains planned |
 | Power BI data exports | Planned | Sprint 8; `.pbix` requires Power BI access |
 | Jira/Confluence/Miro outputs | Planned | Sprint 8; live publishing requires external accounts |
-| Static mission-control UI | Implemented locally | `site/` renders measured rail evidence and exposes the missing joined evidence |
+| Static mission-control UI | Live | `site/` renders measured rail evidence and exposes the missing joined evidence |
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |
-| Scheduled collection | Configured | Runs every six hours after the two DB repository secrets are added; manual live runs use the workflow input |
+| Scheduled collection | Verified | A manual live run completed ingestion, quality checks, retained state, evidence upload, and Pages deployment |
 | SMARD, UBA and Destatis missions | Planned | Separate adapters require verified contracts |
 
 Only measured counts from real or explicitly labelled fixture runs may be added to this table.

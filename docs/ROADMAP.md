@@ -47,6 +47,7 @@ flowchart LR
 - [x] Verify Python 3.11–3.13 in GitHub Actions.
 - [x] Rebuild dashboard data from committed evidence before deployment.
 - [x] Keep scheduled collection credentials in GitHub Secrets.
+- [x] Verify live DWD and DB collection in GitHub Actions.
 - [ ] Add an end-to-end test for evidence rebuild and dashboard generation.
 - [ ] Complete keyboard, contrast, mobile, and reduced-motion checks.
 - [ ] Add a dashboard screenshot to the README.

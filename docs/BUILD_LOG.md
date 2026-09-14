@@ -438,3 +438,17 @@ and join tolerances, then ingest the four DWD profiles before calculating descri
   reproduces 105,600 weather observations, 3,917 railway events, and 52,807 city-hour rows.
 - Added an MIT license and CI checks for Python 3.11–3.13, Ruff, the unit suite, and the evidence
   rebuild. The expanded offline suite passes 46 tests.
+
+### GitHub live-collection verification
+
+- Added the two DB credential names to GitHub Secrets and a manual live-collection workflow input.
+- The first live run exposed a rule error: DB full changes can contain platform, route, or message
+  updates without a changed time. These are valid source records, not malformed timestamps.
+- Added `allow_missing` only to the DB change-feed timestamp rule. Supplied timestamps must still
+  parse with a timezone; DB plan and DWD timestamps remain required.
+- Added a regression test and expanded the offline suite to 55 passing tests.
+- Verified a complete GitHub run: live DWD/DB collection, quality assessment, cached state, raw
+  evidence upload, dashboard build, and Pages deployment all passed.
+- That run produced 52,810 dashboard rows, eight rule-based signals, and eight newly opened local
+  incidents. The live dashboard still reports zero paired city-hours because the source windows
+  do not overlap. These are run results, not production KPIs.

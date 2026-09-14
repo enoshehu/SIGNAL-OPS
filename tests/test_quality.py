@@ -14,6 +14,61 @@ from signalops.universal import normalize
 
 
 class QualityTests(unittest.TestCase):
+    def test_identical_migration_copy_is_not_a_conflicting_observation(self) -> None:
+        definition = load_catalog(Path("config/datasets"))["dwd_weather"]
+        definition = replace(
+            definition, quality=({"key": "unique_observation", "severity": "high"},)
+        )
+        retrieved = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+        artifact = RawArtifact(
+            "dwd",
+            "weather",
+            "weather.zip",
+            retrieved,
+            b"weather",
+            "application/zip",
+            {
+                "source_url": "https://example.invalid/weather",
+                "sha256": "migration-copy",
+                "station_id": "01303",
+            },
+        )
+        record = RawRecord(
+            "dwd",
+            "01303-hour",
+            retrieved,
+            {
+                "station_id": "01303",
+                "observed_at_utc": retrieved.strftime("%Y%m%d%H"),
+                "temperature_c": 18.0,
+                "relative_humidity_pct": 70.0,
+            },
+            {"source_url": "https://example.invalid/weather"},
+        )
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "signalops.sqlite"
+            with SQLiteRecordStore(database) as store:
+                store.store(artifact, Path("weather.zip"), [record])
+            normalize(database, definition)
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """
+                    INSERT INTO observations
+                    SELECT 'legacy-copy', dataset_key, entity_key, import_id, observed_at,
+                           metric, value, unit, source_payload_json
+                    FROM observations WHERE metric = 'air_temperature'
+                    """
+                )
+            identical = assess(database, definition, entity_key="dwd:01303")[0]
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    "UPDATE observations SET value = 19.0 WHERE observation_id = 'legacy-copy'"
+                )
+            conflicting = assess(database, definition, entity_key="dwd:01303")[0]
+
+        self.assertEqual(identical.status, "pass")
+        self.assertEqual(conflicting.status, "failure")
+
     def test_db_changes_allow_events_without_a_time(self) -> None:
         definition = load_catalog(Path("config/datasets"))["db_changes"]
         retrieved = datetime(2026, 9, 14, tzinfo=UTC)

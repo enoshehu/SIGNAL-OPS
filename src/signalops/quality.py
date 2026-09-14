@@ -146,13 +146,13 @@ def assess(
                 affected = tuple(row[0] for row in rows if row[4] is None)
                 results.append(_result(key, len(rows), affected, rule))
             elif key == "unique_observation":
-                seen: set[tuple[str, str, str]] = set()
+                seen: dict[tuple[str, str, str], object] = {}
                 affected_list: list[str] = []
                 for row in rows:
                     grain = (row[1], row[2], row[3])
-                    if grain in seen:
+                    if grain in seen and seen[grain] != row[4]:
                         affected_list.append(row[0])
-                    seen.add(grain)
+                    seen[grain] = row[4]
                 results.append(_result(key, len(rows), tuple(affected_list), rule))
             elif key == "entity_integrity":
                 known = {row[0] for row in connection.execute("SELECT entity_key FROM entities")}

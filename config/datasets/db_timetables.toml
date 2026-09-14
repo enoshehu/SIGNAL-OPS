@@ -1,0 +1,42 @@
+[dataset]
+key = "db_timetables"
+name = "DB planned timetables"
+adapter = "db"
+entity_type = "rail_station"
+refresh_minutes = 60
+
+[source]
+key = "db"
+name = "DB Timetables"
+provider = "Deutsche Bahn"
+license = "CC BY 4.0"
+url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1"
+
+[[entities]]
+key = "db:8000085"
+name = "Düsseldorf Hbf"
+city = "duesseldorf"
+
+[[entities]]
+key = "db:8000086"
+name = "Duisburg Hbf"
+city = "duisburg"
+
+[[entities]]
+key = "db:8000098"
+name = "Essen Hbf"
+city = "essen"
+
+[[entities]]
+key = "db:8000207"
+name = "Köln Hbf"
+city = "koeln"
+
+[[quality]]
+key = "valid_timestamp"
+severity = "high"
+
+[[signals]]
+key = "delay_over_minutes"
+severity = "high"
+threshold = 20

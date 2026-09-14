@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "signalops"
+version = "0.5.0"
+description = "A sprint-built Weather + Railway DataOps reference application"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "SIGNAL//OPS contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.6,<1",
+]
+
+[project.scripts]
+signalops = "signalops.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/signalops"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

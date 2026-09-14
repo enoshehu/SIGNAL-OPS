@@ -1,0 +1,44 @@
+[app]
+name = "SIGNAL//OPS"
+environment = "development"
+data_dir = "data"
+default_city = "essen"
+
+[sources.dwd]
+enabled = true
+base_url = "https://opendata.dwd.de/climate_environment/CDC"
+timeout_seconds = 30
+archive_path = "observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_{station_id}_akt.zip"
+
+[sources.db]
+enabled = true
+base_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1"
+timeout_seconds = 30
+
+[cities.duisburg]
+name = "Duisburg"
+db_station_name = "Duisburg Hbf"
+db_eva_number = "8000086"
+dwd_station_name = "Duisburg-Baerl"
+dwd_station_id = "13670"
+
+[cities.essen]
+name = "Essen"
+db_station_name = "Essen Hbf"
+db_eva_number = "8000098"
+dwd_station_name = "Essen-Bredeney"
+dwd_station_id = "01303"
+
+[cities.koeln]
+name = "Köln"
+db_station_name = "Köln Hbf"
+db_eva_number = "8000207"
+dwd_station_name = "Köln/Bonn"
+dwd_station_id = "02667"
+
+[cities.duesseldorf]
+name = "Düsseldorf"
+db_station_name = "Düsseldorf Hbf"
+db_eva_number = "8000085"
+dwd_station_name = "Düsseldorf"
+dwd_station_id = "01078"

@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from scripts.release_check import check_repository, dashboard_differences
 from signalops.publish import dashboard_payload
@@ -31,7 +32,11 @@ class ReleaseCheckTests(unittest.TestCase):
             }
         ]
         payload = dashboard_payload(rows)
-        self.assertEqual(dashboard_differences(rows, payload), [])
+        with patch.dict(
+            "os.environ",
+            {"GITHUB_SHA": "verifier-sha", "GITHUB_RUN_ID": "verifier-run"},
+        ):
+            self.assertEqual(dashboard_differences(rows, payload), [])
 
         payload["pairedHours"] = 2
         self.assertEqual(

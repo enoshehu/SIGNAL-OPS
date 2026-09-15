@@ -28,10 +28,19 @@ def dashboard_differences(
     """Rebuild the payload at its recorded generation time and compare every field."""
     context = context or {}
     generated_at = datetime.fromisoformat(str(actual["generatedAt"]))
+    actual_provenance = actual.get("provenance", {})
+    if not isinstance(actual_provenance, dict):
+        actual_provenance = {}
     expected = dashboard_payload(
         rows,
         generated_at=generated_at,
-        provenance={"dataDatabaseUpdatedAt": context.get("dataDatabaseUpdatedAt")},
+        provenance={
+            # Deployment identifiers describe the publication being checked. Preserve the
+            # committed values instead of inheriting the verifier's GITHUB_* environment.
+            "gitSha": actual_provenance.get("gitSha", "unknown"),
+            "workflowRunId": actual_provenance.get("workflowRunId", "local"),
+            "dataDatabaseUpdatedAt": context.get("dataDatabaseUpdatedAt"),
+        },
         quality_results=context.get("qualityResults", {}),
     )
     comparable = dict(actual)

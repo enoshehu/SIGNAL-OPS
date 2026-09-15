@@ -62,10 +62,15 @@ class PublishTests(unittest.TestCase):
 
     def test_payload_marks_real_overlap_available(self) -> None:
         payload = dashboard_payload(
-            [{
-                "city": "koeln", "hour_utc": "2026-09-14T00:00:00+00:00",
-                "paired": 1, "weather_available": 1, "rail_available": 1,
-            }],
+            [
+                {
+                    "city": "koeln",
+                    "hour_utc": "2026-09-14T00:00:00+00:00",
+                    "paired": 1,
+                    "weather_available": 1,
+                    "rail_available": 1,
+                }
+            ],
             generated_at=datetime(2026, 9, 14, tzinfo=UTC),
         )
         self.assertEqual(payload["pairedHours"], 1)
@@ -77,12 +82,19 @@ class PublishTests(unittest.TestCase):
 
     def test_delay_rate_uses_matched_events_and_total_minutes_round_once(self) -> None:
         payload = dashboard_payload(
-            [{
-                "city": "duisburg", "hour_utc": "2026-09-14T10:00:00+00:00",
-                "rail_available": 1, "planned_events": 83, "matched_change_events": 61,
-                "classified_change_events": 61, "delayed_events": 47,
-                "positive_delay_minutes_total": 930.6, "maximum_delay_minutes": 40.0,
-            }],
+            [
+                {
+                    "city": "duisburg",
+                    "hour_utc": "2026-09-14T10:00:00+00:00",
+                    "rail_available": 1,
+                    "planned_events": 83,
+                    "matched_change_events": 61,
+                    "classified_change_events": 61,
+                    "delayed_events": 47,
+                    "positive_delay_minutes_total": 930.6,
+                    "maximum_delay_minutes": 40.0,
+                }
+            ],
             generated_at=datetime(2026, 9, 14, 10, tzinfo=UTC),
         )
         city = next(city for city in payload["cities"] if city["key"] == "duisburg")
@@ -98,21 +110,29 @@ class PublishTests(unittest.TestCase):
         rows = []
         for offset in range(72):
             for city in ("duesseldorf", "duisburg", "essen", "koeln"):
-                rows.append({
-                    "city": city, "hour_utc": (start + timedelta(hours=offset)).isoformat(),
-                    "paired": 1, "weather_available": 1, "rail_available": 1,
-                    "planned_events": 1, "matched_change_events": 1,
-                    "classified_change_events": 1,
-                })
+                rows.append(
+                    {
+                        "city": city,
+                        "hour_utc": (start + timedelta(hours=offset)).isoformat(),
+                        "paired": 1,
+                        "weather_available": 1,
+                        "rail_available": 1,
+                        "planned_events": 1,
+                        "matched_change_events": 1,
+                        "classified_change_events": 1,
+                    }
+                )
         payload = dashboard_payload(
-            rows, generated_at=start + timedelta(hours=71),
+            rows,
+            generated_at=start + timedelta(hours=71),
             quality_results={"dwd_live_observations": [{"rule": "freshness", "status": "pass"}]},
         )
         self.assertEqual(payload["status"], "ANALYSIS READY")
         self.assertTrue(payload["readiness"]["ready"])
 
         failed = dashboard_payload(
-            rows, generated_at=start + timedelta(hours=71),
+            rows,
+            generated_at=start + timedelta(hours=71),
             quality_results={"db_changes": [{"rule": "schema_drift", "status": "failure"}]},
         )
         self.assertEqual(failed["status"], "OVERLAP DETECTED")

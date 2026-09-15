@@ -30,9 +30,7 @@ def database_publish_context(database: Path) -> dict[str, object]:
     with closing(sqlite3.connect(database)) as connection:
         tables = {
             row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table'"
-            )
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
         }
         if "artifact_imports" in tables:
             latest = connection.execute("SELECT MAX(retrieved_at) FROM artifact_imports").fetchone()
@@ -57,11 +55,16 @@ def database_publish_context(database: Path) -> dict[str, object]:
             ).fetchall()
             quality: dict[str, list[dict[str, object]]] = {}
             for dataset, scope, rule, status, checked, failed, details in rows:
-                quality.setdefault(dataset, []).append({
-                    "scope": scope, "rule": rule, "status": status,
-                    "checked": checked, "failed": failed,
-                    "details": json.loads(details),
-                })
+                quality.setdefault(dataset, []).append(
+                    {
+                        "scope": scope,
+                        "rule": rule,
+                        "status": status,
+                        "checked": checked,
+                        "failed": failed,
+                        "details": json.loads(details),
+                    }
+                )
             context["qualityResults"] = quality
     return context
 
@@ -85,12 +88,20 @@ def _age_minutes(latest_at: str | None, generated_at: datetime) -> int | None:
 
 
 def _source_health(
-    *, name: str, detail: str, count: int, latest_at: str | None,
-    generated_at: datetime, datasets: tuple[str, ...],
-    quality_results: Mapping[str, object], stale_after_minutes: int,
+    *,
+    name: str,
+    detail: str,
+    count: int,
+    latest_at: str | None,
+    generated_at: datetime,
+    datasets: tuple[str, ...],
+    quality_results: Mapping[str, object],
+    stale_after_minutes: int,
 ) -> dict[str, object]:
     checks = [
-        check for dataset in datasets for check in quality_results.get(dataset, [])
+        check
+        for dataset in datasets
+        for check in quality_results.get(dataset, [])
         if isinstance(check, dict)
     ]
     failures = [check for check in checks if check.get("status") == "failure"]
@@ -108,8 +119,12 @@ def _source_health(
     else:
         state, reason = "READY", "Retained data are present and no latest quality check is failing."
     return {
-        "name": name, "state": state, "detail": detail, "reason": reason,
-        "latestAt": latest_at, "ageMinutes": age,
+        "name": name,
+        "state": state,
+        "detail": detail,
+        "reason": reason,
+        "latestAt": latest_at,
+        "ageMinutes": age,
         "quality": {"checks": len(checks), "warnings": len(warnings), "failures": len(failures)},
     }
 
@@ -128,7 +143,9 @@ def _metric_provenance(row: Mapping[str, object], prefix: str) -> dict[str, obje
 
 
 def dashboard_payload(
-    rows: Iterable[dict[str, object]], *, generated_at: datetime | None = None,
+    rows: Iterable[dict[str, object]],
+    *,
+    generated_at: datetime | None = None,
     provenance: Mapping[str, object] | None = None,
     quality_results: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
@@ -172,9 +189,7 @@ def dashboard_payload(
                         "delayed": delayed,
                         "cancelled": int(row.get("cancelled_events") or 0),
                         "positiveDelayRate": round(delayed / matched, 4) if matched else None,
-                        "meanPositiveDelay": (
-                            round(delay_total / delayed, 1) if delayed else None
-                        ),
+                        "meanPositiveDelay": (round(delay_total / delayed, 1) if delayed else None),
                     },
                 }
             )
@@ -191,13 +206,17 @@ def dashboard_payload(
         if not delay_minutes:  # Compatibility for callers supplying pre-v2 analysis rows.
             delay_minutes = sum(
                 float(row["average_delay_minutes"]) * int(row.get("delayed_events") or 0)
-                for row in scoped if row.get("average_delay_minutes") is not None
+                for row in scoped
+                if row.get("average_delay_minutes") is not None
             )
         if not classified:
-            classified = sum(min(
-                int(row.get("matched_change_events") or 0),
-                int(row.get("cancelled_events") or 0) + int(row.get("delayed_events") or 0),
-            ) for row in scoped)
+            classified = sum(
+                min(
+                    int(row.get("matched_change_events") or 0),
+                    int(row.get("cancelled_events") or 0) + int(row.get("delayed_events") or 0),
+                )
+                for row in scoped
+            )
         maximums = [
             float(row["maximum_delay_minutes"])
             for row in scoped
@@ -215,38 +234,48 @@ def dashboard_payload(
         metric_sources = {
             metric: source
             for metric, prefix in {
-                "temperature": "temperature", "humidity": "humidity",
-                "precipitation": "precipitation", "windSpeed": "wind", "windGust": "gust",
+                "temperature": "temperature",
+                "humidity": "humidity",
+                "precipitation": "precipitation",
+                "windSpeed": "wind",
+                "windGust": "gust",
             }.items()
             if latest_weather and (source := _metric_provenance(latest_weather, prefix))
         }
-        cities.append({
-            "key": key, "name": DISPLAY_NAMES[key], "plans": plans, "matched": matched,
-            "classified": classified, "unmatched": max(0, plans - matched),
-            "unclassified": max(0, matched - classified),
-            "cancelled": cancelled,
-            "delayed": delayed,
-            "matchCoverage": round(matched / plans, 4) if plans else None,
-            "coverageState": (
-                "DEGRADED"
-                if plans and matched / plans < READINESS_MIN_MATCH_COVERAGE
-                else ("READY" if plans else "WAITING")
-            ),
-            "positiveDelayRate": round(delayed / matched, 4) if matched else None,
-            "positiveDelayMinutesTotal": delay_minutes,
-            "meanDelay": round(delay_minutes / delayed, 1) if delayed else None,
-            "maxDelay": round(max(maximums), 1) if maximums else None,
-            "pairedHours": len(city_paired), "pairedWindow": _window(city_paired),
-            "weatherHours": len(weather_rows),
-            "latestWeatherAt": latest_weather.get("hour_utc") if latest_weather else None,
-            "weatherStation": latest_weather.get("weather_station") if latest_weather else None,
-            "weatherProvenance": metric_sources,
-            "temperature": latest_weather.get("air_temperature_c") if latest_weather else None,
-            "humidity": latest_weather.get("relative_humidity_pct") if latest_weather else None,
-            "precipitation": latest_weather.get("precipitation_mm") if latest_weather else None,
-            "windSpeed": latest_weather.get("wind_speed_m_s") if latest_weather else None,
-            "windGust": latest_weather.get("wind_gust_m_s") if latest_weather else None,
-        })
+        cities.append(
+            {
+                "key": key,
+                "name": DISPLAY_NAMES[key],
+                "plans": plans,
+                "matched": matched,
+                "classified": classified,
+                "unmatched": max(0, plans - matched),
+                "unclassified": max(0, matched - classified),
+                "cancelled": cancelled,
+                "delayed": delayed,
+                "matchCoverage": round(matched / plans, 4) if plans else None,
+                "coverageState": (
+                    "DEGRADED"
+                    if plans and matched / plans < READINESS_MIN_MATCH_COVERAGE
+                    else ("READY" if plans else "WAITING")
+                ),
+                "positiveDelayRate": round(delayed / matched, 4) if matched else None,
+                "positiveDelayMinutesTotal": delay_minutes,
+                "meanDelay": round(delay_minutes / delayed, 1) if delayed else None,
+                "maxDelay": round(max(maximums), 1) if maximums else None,
+                "pairedHours": len(city_paired),
+                "pairedWindow": _window(city_paired),
+                "weatherHours": len(weather_rows),
+                "latestWeatherAt": latest_weather.get("hour_utc") if latest_weather else None,
+                "weatherStation": latest_weather.get("weather_station") if latest_weather else None,
+                "weatherProvenance": metric_sources,
+                "temperature": latest_weather.get("air_temperature_c") if latest_weather else None,
+                "humidity": latest_weather.get("relative_humidity_pct") if latest_weather else None,
+                "precipitation": latest_weather.get("precipitation_mm") if latest_weather else None,
+                "windSpeed": latest_weather.get("wind_speed_m_s") if latest_weather else None,
+                "windGust": latest_weather.get("wind_gust_m_s") if latest_weather else None,
+            }
+        )
 
     windows = {
         "weather": _window(weather_hours),
@@ -269,7 +298,8 @@ def dashboard_payload(
     latest_rail_at = windows["rail"]["end"]
     sources = [
         _source_health(
-            name="DWD Weather", detail=f"{len(weather_hours)} retained city-hours",
+            name="DWD Weather",
+            detail=f"{len(weather_hours)} retained city-hours",
             count=len(weather_hours),
             latest_at=str(latest_weather_at) if latest_weather_at else None,
             generated_at=generated,
@@ -280,19 +310,28 @@ def dashboard_payload(
                 "dwd_wind",
                 "dwd_wind_gust",
             ),
-            quality_results=quality_results, stale_after_minutes=180,
+            quality_results=quality_results,
+            stale_after_minutes=180,
         ),
         _source_health(
-            name="DB Plans", detail=f"{total_plans} retained timetable events", count=total_plans,
-            latest_at=str(latest_rail_at) if latest_rail_at else None, generated_at=generated,
-            datasets=("db_timetables",), quality_results=quality_results, stale_after_minutes=180,
+            name="DB Plans",
+            detail=f"{total_plans} retained timetable events",
+            count=total_plans,
+            latest_at=str(latest_rail_at) if latest_rail_at else None,
+            generated_at=generated,
+            datasets=("db_timetables",),
+            quality_results=quality_results,
+            stale_after_minutes=180,
         ),
         _source_health(
             name="DB Changes",
             detail=f"{total_matched} of {total_plans} plans matched",
             count=total_matched,
-            latest_at=str(latest_rail_at) if latest_rail_at else None, generated_at=generated,
-            datasets=("db_changes",), quality_results=quality_results, stale_after_minutes=180,
+            latest_at=str(latest_rail_at) if latest_rail_at else None,
+            generated_at=generated,
+            datasets=("db_changes",),
+            quality_results=quality_results,
+            stale_after_minutes=180,
         ),
     ]
     low_coverage_cities = [
@@ -309,9 +348,7 @@ def dashboard_payload(
     source_gate = all(source["state"] not in {"FAILED", "STALE"} for source in sources)
     match_coverage = total_matched / total_plans if total_plans else 0.0
     city_match_coverages = [
-        float(city["matchCoverage"])
-        for city in cities
-        if city["matchCoverage"] is not None
+        float(city["matchCoverage"]) for city in cities if city["matchCoverage"] is not None
     ]
     minimum_city_match_coverage = min(city_match_coverages, default=0.0)
     criteria = [
@@ -328,8 +365,7 @@ def dashboard_payload(
             "actual": min(int(city["pairedHours"]) for city in cities),
             "required": READINESS_MIN_PAIRED_HOURS_PER_CITY,
             "passed": all(
-                int(city["pairedHours"]) >= READINESS_MIN_PAIRED_HOURS_PER_CITY
-                for city in cities
+                int(city["pairedHours"]) >= READINESS_MIN_PAIRED_HOURS_PER_CITY for city in cities
             ),
         },
         {
@@ -380,14 +416,19 @@ def dashboard_payload(
             "The retained weather and railway windows do not overlap yet. "
             "Weather effects are not calculated."
         )
-    sources.append({
-        "name": "Paired analysis",
-        "state": "READY" if analysis_ready else ("PARTIAL" if paired_hours else "WAITING"),
-        "detail": f"{len(paired_hours)} overlapping city-hours",
-        "reason": "All readiness gates pass." if analysis_ready else "Readiness gates remain open.",
-        "latestAt": windows["overlap"]["end"], "ageMinutes": None,
-        "quality": {"checks": len(criteria), "warnings": 0, "failures": 0},
-    })
+    sources.append(
+        {
+            "name": "Paired analysis",
+            "state": "READY" if analysis_ready else ("PARTIAL" if paired_hours else "WAITING"),
+            "detail": f"{len(paired_hours)} overlapping city-hours",
+            "reason": "All readiness gates pass."
+            if analysis_ready
+            else "Readiness gates remain open.",
+            "latestAt": windows["overlap"]["end"],
+            "ageMinutes": None,
+            "quality": {"checks": len(criteria), "warnings": 0, "failures": 0},
+        }
+    )
     recent_paired_samples = sorted(
         paired_samples,
         key=lambda sample: (str(sample["hourUtc"]), str(sample["city"])),
@@ -395,12 +436,20 @@ def dashboard_payload(
     )[:24]
 
     return {
-        "schemaVersion": 2, "generatedAt": generated.isoformat(), "status": status,
-        "notice": notice, "pairedHours": len(paired_hours), "weatherHours": len(weather_hours),
-        "railHours": len(rail_hours), "windows": windows,
-        "latestDwdAt": latest_weather_at, "latestDbAt": latest_rail_at,
+        "schemaVersion": 2,
+        "generatedAt": generated.isoformat(),
+        "status": status,
+        "notice": notice,
+        "pairedHours": len(paired_hours),
+        "weatherHours": len(weather_hours),
+        "railHours": len(rail_hours),
+        "windows": windows,
+        "latestDwdAt": latest_weather_at,
+        "latestDbAt": latest_rail_at,
         "completeness": {
-            "planned": total_plans, "matched": total_matched, "classified": total_classified,
+            "planned": total_plans,
+            "matched": total_matched,
+            "classified": total_classified,
             "unmatched": max(0, total_plans - total_matched),
             "unclassified": max(0, total_matched - total_classified),
             "delayed": sum(int(city["delayed"]) for city in cities),
@@ -430,8 +479,10 @@ def dashboard_payload(
         },
         "pairedTimeline": recent_paired_samples,
         "collection": {
-            "pipelineCadenceMinutes": 15, "browserPollSeconds": 60,
-            "analysisRetentionDays": 180, "rawEvidenceRetentionDays": 30,
+            "pipelineCadenceMinutes": 15,
+            "browserPollSeconds": 60,
+            "analysisRetentionDays": 180,
+            "rawEvidenceRetentionDays": 30,
             "explanation": (
                 "The browser checks the latest published JSON every 60 seconds. Collection "
                 "runs separately on a nominal 15-minute GitHub Actions schedule."
@@ -452,12 +503,16 @@ def dashboard_payload(
             or "local",
             "dataDatabaseUpdatedAt": provenance.get("dataDatabaseUpdatedAt"),
         },
-        "cities": cities, "sources": sources,
+        "cities": cities,
+        "sources": sources,
     }
 
 
 def write_dashboard_json(
-    rows: Iterable[dict[str, object]], output: Path, *, generated_at: datetime | None = None,
+    rows: Iterable[dict[str, object]],
+    output: Path,
+    *,
+    generated_at: datetime | None = None,
     provenance: Mapping[str, object] | None = None,
     quality_results: Mapping[str, object] | None = None,
 ) -> None:

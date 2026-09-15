@@ -19,6 +19,7 @@
       <span><b>SIGNAL</b><small>Rhine–Ruhr monitor</small></span>
     </a>
     <nav aria-label="Primary navigation">
+      <a href="#mission">Mission</a>
       <a href="#cities">Stations</a>
       <a href="#weather">Weather</a>
       <a href="#collection">Collection</a>
@@ -34,8 +35,8 @@
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy reveal">
         <p class="eyebrow"><span class="status-dot"></span>Published 180-day rolling monitor / four main stations</p>
-        <h1 id="page-title"><span>Rail performance.</span><br><em>Weather context.</em></h1>
-        <p class="lede">Track delays and cancellations at Düsseldorf, Duisburg, Essen and Köln. When rail and weather records cover the same UTC hour, the monitor compares them automatically.</p>
+        <h1 id="page-title"><span>When the sky</span><br><em>strains the railway.</em></h1>
+        <p class="lede">SIGNAL//OPS turns independent public feeds into operational evidence: when weather and railway records describe the same city and UTC hour, they become one inspectable observation.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#cities">View station performance</a>
           <a class="button button-ghost" href="#weather">View weather <span aria-hidden="true">↘</span></a>
@@ -53,8 +54,29 @@
           <div><dt>Published</dt><dd id="generated">loading</dd></div>
           <div><dt>Browser check</dt><dd id="checked">loading</dd></div>
         </dl>
-        <button class="panel-refresh" id="data-refresh" type="button">Check for published update</button>
+        <button class="panel-refresh" id="data-refresh" type="button">Refresh rail + weather</button>
+        <p class="refresh-result" id="refresh-result" aria-live="polite">Loading one joint snapshot…</p>
+        <a class="collection-trigger" href="https://github.com/enoshehu/SIGNAL-OPS/actions/workflows/pages.yml">Owner: collect both sources now ↗</a>
       </aside>
+    </section>
+
+    <section class="mission-brief reveal" id="mission" aria-labelledby="mission-title">
+      <div class="mission-copy">
+        <p class="section-number">Live mission 01 / Germany in motion</p>
+        <h2 id="mission-title">Build evidence.<br>Find sensitivity.</h2>
+        <p class="mission-question">Do rain, wind, heat, or other weather conditions coincide with more delays and cancellations at Düsseldorf, Duisburg, Essen, and Köln?</p>
+        <p>The goal is not to blame weather for a delay. It is to build enough trustworthy, time-aligned evidence to see when disruption and weather stress move together—and where the railway appears most sensitive.</p>
+      </div>
+      <div class="mission-system" aria-label="DWD weather and DB railway data join by city and UTC hour">
+        <div class="mission-node weather-node"><small>Official observations</small><b>DWD</b><span>Rain · wind · heat</span></div>
+        <div class="mission-link"><span>City</span><i>+</i><span>UTC hour</span></div>
+        <div class="mission-node rail-node"><small>Operational events</small><b>DB</b><span>Plans · delays · cancellations</span></div>
+        <div class="mission-outcome"><small>Operational question</small><strong>When do both signals rise?</strong></div>
+      </div>
+      <div class="goal-panel">
+        <div class="goal-dial" id="goal-dial"><div><strong id="goal-percent">0%</strong><small>of paired-hour target</small></div></div>
+        <div class="goal-copy"><span>Live evidence goal</span><strong id="goal-count">0 / 168 paired city-hours</strong><p id="goal-state">Loading readiness</p><small>Plus ≥24 paired hours per city, ≥72 hours of span, ≥50% expected coverage, healthy sources, and ≥80% DB matching in every city.</small></div>
+      </div>
     </section>
 
     <section class="route-section reveal" aria-labelledby="network-title">
@@ -151,12 +173,17 @@
       </div>
 
       <div class="source-grid reveal" id="source-list"></div>
+
+      <section class="evidence-stream reveal" aria-labelledby="stream-title">
+        <div class="stream-heading"><div><p class="kicker">Weather × railway evidence</p><h3 id="stream-title">Latest paired city-hours</h3></div><p>Each card is a real join: one configured DWD proxy and railway events from the same city and exact UTC hour.</p></div>
+        <div class="paired-timeline" id="paired-timeline" aria-live="polite"></div>
+      </section>
     </section>
 
     <section class="collection" id="collection" aria-labelledby="collection-title">
       <div class="section-heading reveal">
         <div><p class="section-number">03 / Data collection</p><h2 id="collection-title">What updates,<br>when, and from where.</h2></div>
-        <p class="section-intro">The website is a published snapshot. Its one-minute browser check is separate from source collection, processing, and deployment. Times below come from the payload itself.</p>
+        <p class="section-intro">The website refreshes rail and weather together from one atomic publication. Its one-minute browser check is separate from source collection, processing, and deployment. Times below come from the payload itself.</p>
       </div>
       <div class="collection-grid reveal" id="collection-grid"></div>
       <div class="readiness reveal">
@@ -173,7 +200,7 @@
       <div class="method-steps reveal">
         <article><span>01</span><h3>Download</h3><p>GitHub Actions is scheduled every 15 minutes. Each run fetches sources that are due; queued or failed runs can delay publication.</p></article>
         <article><span>02</span><h3>Retain history</h3><p>Analysis keeps 180 days. Original downloads remain available for 30 days for replay and recovery.</p></article>
-        <article><span>03</span><h3>Match</h3><p>Plans and changes match by station, stop ID and event type. Weather matches by city and UTC hour.</p></article>
+        <article><span>03</span><h3>Match</h3><p>Plans and changes match by station, stop ID and event type. Weather and rail become comparable only at the same configured city and exact UTC hour.</p></article>
         <article><span>04</span><h3>Report</h3><p>Delay rate uses matched events. Missing, unmatched and unclassified records stay visible and are never counted as on-time or zero.</p></article>
       </div>
       <div class="method-statement reveal">

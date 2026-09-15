@@ -65,3 +65,5 @@ planned → matched → classified completeness; positive-delay rates among matc
 per-reading DWD station and provisional/final provenance; quality- and freshness-derived
 source states; explicit multi-criterion readiness; and commit, workflow-run, and database
 update provenance. Browser polling is reported separately from source collection cadence.
+The payload also includes up to 24 recent real `pairedTimeline` samples and a measurable
+`liveGoal`. Rail and weather UI panels always render from this same atomic publication.

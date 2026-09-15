@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-14T23:56:58.277147+00:00",
+  "generatedAt": "2026-09-15T00:12:13.268168+00:00",
   "status": "WAITING FOR TIME OVERLAP",
   "notice": "The retained weather and railway windows do not overlap yet. Weather effects are not calculated.",
   "pairedHours": 0,
@@ -83,12 +83,30 @@
       }
     ]
   },
+  "liveGoal": {
+    "title": "Build trustworthy evidence of when weather stress and rail disruption coincide",
+    "question": "Do rain, wind, heat, or other weather conditions coincide with more delays or cancellations at the four Rhine–Ruhr stations?",
+    "method": "Join configured DWD weather proxies to DB operational events only when city and UTC hour match; report association without claiming causation.",
+    "currentPairedHours": 0,
+    "targetPairedHours": 168,
+    "progress": 0.0,
+    "state": "WAITING FOR TIME OVERLAP"
+  },
+  "pairedTimeline": [],
   "collection": {
     "pipelineCadenceMinutes": 15,
     "browserPollSeconds": 60,
     "analysisRetentionDays": 180,
     "rawEvidenceRetentionDays": 30,
-    "explanation": "The browser checks the latest published JSON every 60 seconds. Collection runs separately on a nominal 15-minute GitHub Actions schedule."
+    "explanation": "The browser checks the latest published JSON every 60 seconds. Collection runs separately on a nominal 15-minute GitHub Actions schedule.",
+    "refreshScope": [
+      "DWD weather",
+      "DB plans",
+      "DB changes",
+      "quality checks",
+      "paired analysis"
+    ],
+    "atomicPublication": true
   },
   "provenance": {
     "gitSha": "unknown",
@@ -284,7 +302,7 @@
       "detail": "52800 retained city-hours",
       "reason": "The latest retained observation exceeds its freshness limit.",
       "latestAt": "2026-09-13T23:00:00+00:00",
-      "ageMinutes": 1496,
+      "ageMinutes": 1512,
       "quality": {
         "checks": 0,
         "warnings": 0,
@@ -297,7 +315,7 @@
       "detail": "353 retained timetable events",
       "reason": "The latest retained observation exceeds its freshness limit.",
       "latestAt": "2026-09-14T18:00:00+00:00",
-      "ageMinutes": 356,
+      "ageMinutes": 372,
       "quality": {
         "checks": 0,
         "warnings": 0,
@@ -310,7 +328,7 @@
       "detail": "331 of 353 plans matched",
       "reason": "The latest retained observation exceeds its freshness limit.",
       "latestAt": "2026-09-14T18:00:00+00:00",
-      "ageMinutes": 356,
+      "ageMinutes": 372,
       "quality": {
         "checks": 0,
         "warnings": 0,

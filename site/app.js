@@ -181,6 +181,44 @@ function renderSources(sources) {
     .join("");
 }
 
+function renderMission(data) {
+  const goal = data.liveGoal;
+  const progress = Math.min(100, Math.max(0, Number(goal.progress ?? 0) * 100));
+  const dial = document.querySelector("#goal-dial");
+  dial.style.setProperty("--goal-progress", `${progress * 3.6}deg`);
+  document.querySelector("#goal-percent").textContent = `${format.format(progress)}%`;
+  document.querySelector("#goal-count").textContent =
+    `${format.format(goal.currentPairedHours)} / ${format.format(goal.targetPairedHours)} paired city-hours`;
+  document.querySelector("#goal-state").textContent = goal.state;
+}
+
+function renderPairedTimeline(data) {
+  const samples = data.pairedTimeline ?? [];
+  const target = document.querySelector("#paired-timeline");
+  if (!samples.length) {
+    target.innerHTML = `
+      <div class="timeline-empty">
+        <b>Waiting for the first matching city-hour</b>
+        <p>Weather and railway records remain separate until their city and UTC hour match exactly.</p>
+      </div>`;
+    return;
+  }
+  target.innerHTML = samples.map((sample) => {
+    const city = data.cities.find((item) => item.key === sample.city);
+    const weather = sample.weather;
+    const rail = sample.rail;
+    return `
+      <article class="paired-sample" style="--city-color:${colourFor(sample.city, data.cities)}">
+        <header><span>${escapeHTML(city?.name ?? sample.city)}</span><time>${escapeHTML(timestamp(sample.hourUtc))}</time></header>
+        <div class="sample-bridge">
+          <section><small>DWD proxy</small><strong>${escapeHTML(reading(weather.temperature, "°C"))}</strong><p>${escapeHTML(reading(weather.precipitation, "mm"))} rain · ${escapeHTML(reading(weather.windSpeed, "m/s"))} wind</p></section>
+          <i aria-hidden="true">×</i>
+          <section><small>DB operations</small><strong>${percent(rail.positiveDelayRate)}</strong><p>${format.format(rail.delayed)} delayed · ${format.format(rail.cancelled)} cancelled · ${rail.meanPositiveDelay === null ? "mean unavailable" : `${format.format(rail.meanPositiveDelay)} min mean`}</p></section>
+        </div>
+      </article>`;
+  }).join("");
+}
+
 function renderCompleteness(data) {
   const values = data.completeness;
   const steps = [
@@ -244,6 +282,7 @@ let secondsUntilRefresh = 60;
 
 async function loadData() {
   const refreshButton = document.querySelector("#data-refresh");
+  const previousSnapshot = dashboardData?.generatedAt;
   refreshButton.disabled = true;
   refreshButton.textContent = "Checking published data…";
   const response = await fetch(`data/summary.json?checked=${Date.now()}`, { cache: "no-store" });
@@ -268,6 +307,11 @@ async function loadData() {
     minute: "2-digit",
     second: "2-digit",
   });
+  document.querySelector("#refresh-result").textContent = previousSnapshot
+    ? previousSnapshot === data.generatedAt
+      ? "Rail and weather are already on the latest joint snapshot."
+      : "A new joint rail and weather snapshot was loaded."
+    : "Rail and weather loaded from one published snapshot.";
 
   const hasOverlap = Number(data.pairedHours) > 0;
   const joinCore = document.querySelector("#join-core");
@@ -281,6 +325,8 @@ async function loadData() {
   renderWeather(data.cities);
   renderCompleteness(data);
   renderCollection(data);
+  renderMission(data);
+  renderPairedTimeline(data);
 
   const select = document.querySelector("#city-select");
   select.replaceChildren(new Option("All four cities", "all"));
@@ -303,7 +349,7 @@ async function loadData() {
   render();
   secondsUntilRefresh = 60;
   refreshButton.disabled = false;
-  refreshButton.textContent = "Check for published update";
+  refreshButton.textContent = "Refresh rail + weather";
 }
 
 async function start() {
@@ -314,7 +360,7 @@ async function start() {
   window.setInterval(() => {
     secondsUntilRefresh -= 1;
     if (secondsUntilRefresh <= 0) loadData().catch(showError);
-    else if (!refreshButton.disabled) refreshButton.textContent = `Check for published update · ${secondsUntilRefresh}s`;
+    else if (!refreshButton.disabled) refreshButton.textContent = `Refresh rail + weather · ${secondsUntilRefresh}s`;
   }, 1000);
 }
 

@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       collect_live:
-        description: Collect fresh DWD and DB data before publishing
+        description: Force a synchronized DWD and DB collection before publishing
         required: true
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SIGNALOPS_COLLECT_LIVE: ${{ github.event_name == 'schedule' || inputs.collect_live == true }}
+      SIGNALOPS_FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' && inputs.collect_live == true }}
       SIGNALOPS_DB_READY: ${{ secrets.DB_API_CLIENT_ID != '' && secrets.DB_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v7
@@ -55,25 +56,27 @@ jobs:
           if test -f signalops-live-data.tar.gz; then
             tar -xzf signalops-live-data.tar.gz
           fi
-      - name: Collect due public DWD data
+      - name: Collect synchronized DWD snapshot
         if: env.SIGNALOPS_COLLECT_LIVE == 'true'
         env:
           SIGNALOPS_DATA_DIR: runtime
         run: >-
-          signalops sync --config config/base.toml --env-file /dev/null
+          signalops sync ${{ env.SIGNALOPS_FORCE_REFRESH == 'true' && '--force' || '' }}
+          --config config/base.toml --env-file /dev/null
           --dataset dwd_live_observations
           --dataset dwd_weather
           --dataset dwd_precipitation
           --dataset dwd_wind
           --dataset dwd_wind_gust
-      - name: Collect due DB timetable data
+      - name: Collect synchronized DB snapshot
         if: env.SIGNALOPS_COLLECT_LIVE == 'true' && env.SIGNALOPS_DB_READY == 'true'
         env:
           DB_API_CLIENT_ID: ${{ secrets.DB_API_CLIENT_ID }}
           DB_API_KEY: ${{ secrets.DB_API_KEY }}
           SIGNALOPS_DATA_DIR: runtime
         run: >-
-          signalops sync --config config/base.toml --env-file /dev/null
+          signalops sync ${{ env.SIGNALOPS_FORCE_REFRESH == 'true' && '--force' || '' }}
+          --config config/base.toml --env-file /dev/null
           --dataset db_timetables
           --dataset db_changes
       - name: Reconcile live dashboard with rolling database

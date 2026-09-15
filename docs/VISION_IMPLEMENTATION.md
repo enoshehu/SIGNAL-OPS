@@ -13,10 +13,10 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Rhine–Ruhr city profiles | Complete | Selectable DWD/DB profiles for Duisburg, Essen, Düsseldorf, and Köln |
 | Railway service events | Complete for plan/change snapshots | Rolling plans and changes normalized across four cities |
 | City-scoped quality | Complete | Latest import and checks resolve by station scope instead of global source order |
-| Weather × Railway city-hour export | Partial | Export and condition profile work; genuine overlapping evidence awaits the next DWD day |
+| Weather × Railway city-hour export | Complete for v1 | Rolling collection creates real city-hour pairs; the dashboard shows recent paired evidence and keeps statistical readiness behind explicit coverage gates |
 | Raw/Bronze and parsed-raw layers | Complete | Raw archive plus SQLite replay tables; credential-free evidence is committed |
 | Validation and quality results | Complete for v1 | Product-specific value checks, timestamps, integrity, continuity, freshness, and schema drift |
-| Data Source Health | Partial | Scheduled runs evaluate quality; the dashboard currently shows availability only |
+| Data Source Health | Complete for v1 | Dashboard states derive from freshness, persisted quality results, source volume, and DB matching completeness |
 | Numeric Data Trust Score | Planned after validation | Current outputs show individual rule evidence |
 | Schema drift | Complete at parsed-payload layer | Baseline field/type fingerprints; raw contract drift remains later work |
 | Delay and cancellation derivation | Complete for matched events | Stable plan/change join; unmatched changes excluded |
@@ -25,7 +25,7 @@ This file maps the unchanged `PROJECT_VISION.md` to implementation evidence.
 | Excel review queue | Partial | Initial formatted workbook exists; automated regeneration remains planned |
 | Power BI data exports | Planned | Sprint 8; `.pbix` requires Power BI access |
 | Jira/Confluence/Miro outputs | Planned | Sprint 8; live publishing requires external accounts |
-| Static mission-control UI | Live | `site/` renders measured rail evidence and exposes the missing joined evidence |
+| Static mission-control UI | Live | `site/` presents the live Weather × Railway mission, paired evidence stream, source trust, completeness, collection provenance, and measurable readiness goal |
 | Query API | Planned for a later release | Version 1 uses static JSON on Pages |
 | CI | Complete | Python 3.11–3.13, lint, format, tests, and offline evidence rebuild |
 | Pages deployment | Live | [Public dashboard](https://enoshehu.github.io/SIGNAL-OPS/) |

@@ -1,8 +1,9 @@
 # SIGNAL//OPS
 
-SIGNAL//OPS combines DWD temperature, humidity, precipitation, wind and gust observations with Deutsche
-Bahn timetable updates for Duisburg, Essen, Düsseldorf, and Köln. It preserves raw source files,
-normalizes them in SQLite, runs explicit quality checks, and publishes a static dashboard.
+SIGNAL//OPS is a reusable real-world DataOps platform: it ingests independent public feeds,
+preserves their evidence, tests whether they can be trusted, and turns time-aligned observations
+into operational signals. Its first live mission combines DWD weather with Deutsche Bahn timetable
+updates for Duisburg, Essen, Düsseldorf, and Köln.
 
 [**Live dashboard**](https://enoshehu.github.io/SIGNAL-OPS/) ·
 [Data profile](docs/analysis/RHINE_RUHR_DATA_PROFILE.md) ·
@@ -22,6 +23,18 @@ normalizes them in SQLite, runs explicit quality checks, and publishes a static 
 - Matches DB plans with change events to calculate observed delays and cancellations.
 - Builds CSV and JSON dashboard outputs, with an Excel review workbook for handoff.
 
+## Live mission: when the sky strains the railway
+
+The current mission asks whether rain, wind, heat, or other weather conditions coincide with more
+delays and cancellations at the four monitored stations. A weather observation and railway events
+become comparable only when their configured city and exact UTC hour match.
+
+The live evidence goal is at least 168 paired city-hours, with at least 24 hours in every city,
+72 hours of temporal span, 50% expected city-hour coverage, healthy sources, and at least 80% DB
+event matching in every city. Until every gate passes, overlap is shown as evidence in progress—not
+as a weather-effect conclusion. Even after readiness, the result describes association and does not
+claim that weather caused a specific disruption.
+
 ## Current snapshot
 
 | Data | Result |
@@ -30,11 +43,12 @@ normalizes them in SQLite, runs explicit quality checks, and publishes a static 
 | Planned railway events | 353 |
 | Plans matched with updates | 331 |
 | Cities | 4 |
-| Automated tests | 75 |
+| Automated tests | 86 |
 
 The saved weather window ends on 13 September 2026 and the railway window begins on 14 September
 2026. There are no paired city-hours yet, so the project does not calculate a weather–railway
 relationship. The railway results describe one collected slice and are not performance ratings.
+The rolling GitHub Pages database grows independently and can contain newer paired observations.
 
 ## Architecture
 

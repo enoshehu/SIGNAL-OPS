@@ -8,6 +8,7 @@ class SiteAccessibilityTests(unittest.TestCase):
         cls.html = Path("site/index.html").read_text(encoding="utf-8")
         cls.css = Path("site/styles.css").read_text(encoding="utf-8")
         cls.javascript = Path("site/app.js").read_text(encoding="utf-8")
+        cls.workflow = Path(".github/workflows/pages.yml").read_text(encoding="utf-8")
 
     def test_page_has_navigation_landmarks_skip_link_and_labelled_controls(self) -> None:
         self.assertIn('href="#overview">Skip to dashboard', self.html)
@@ -20,18 +21,27 @@ class SiteAccessibilityTests(unittest.TestCase):
         self.assertIn('id="data-refresh"', self.html)
         self.assertIn('id="collection-grid"', self.html)
         self.assertIn('id="completeness-flow"', self.html)
+        self.assertIn('id="mission"', self.html)
+        self.assertIn('id="paired-timeline"', self.html)
 
     def test_dashboard_refreshes_and_renders_weather_readings(self) -> None:
         self.assertIn('cache: "no-store"', self.javascript)
         self.assertIn("window.setInterval", self.javascript)
         self.assertIn("renderWeather(data.cities)", self.javascript)
         self.assertIn("row.delayed / row.matched", self.javascript)
-        self.assertIn("Check for published update", self.javascript)
+        self.assertIn("Refresh rail + weather", self.javascript)
+        self.assertIn("renderPairedTimeline(data)", self.javascript)
         self.assertIn("WAITING FOR TIME OVERLAP", Path("site/data/summary.json").read_text())
 
     def test_reduced_motion_is_honoured_in_css_and_javascript(self) -> None:
         self.assertIn("prefers-reduced-motion: reduce", self.css)
         self.assertIn('reduceMotion ? "auto" : "smooth"', self.javascript)
+
+    def test_manual_collection_forces_both_sources_in_one_workflow(self) -> None:
+        self.assertIn("default: true", self.workflow)
+        self.assertIn("Collect synchronized DWD snapshot", self.workflow)
+        self.assertIn("Collect synchronized DB snapshot", self.workflow)
+        self.assertEqual(self.workflow.count("&& '--force' || ''"), 2)
 
     def test_mobile_layout_and_visible_keyboard_focus_exist(self) -> None:
         self.assertIn("@media (max-width: 760px)", self.css)

@@ -139,6 +139,7 @@ def dashboard_payload(
     weather_hours: list[str] = []
     rail_hours: list[str] = []
     paired_hours: list[str] = []
+    paired_samples: list[dict[str, object]] = []
     for row in rows:
         city_rows.setdefault(str(row["city"]), []).append(row)
         hour = str(row.get("hour_utc") or "")
@@ -148,6 +149,35 @@ def dashboard_payload(
             rail_hours.append(hour)
         if hour and int(row.get("paired") or 0):
             paired_hours.append(hour)
+            delayed = int(row.get("delayed_events") or 0)
+            matched = int(row.get("matched_change_events") or 0)
+            delay_total = float(row.get("positive_delay_minutes_total") or 0)
+            if not delay_total and row.get("average_delay_minutes") is not None:
+                delay_total = float(row["average_delay_minutes"]) * delayed
+            paired_samples.append(
+                {
+                    "city": str(row["city"]),
+                    "hourUtc": hour,
+                    "weatherStation": row.get("weather_station"),
+                    "weather": {
+                        "temperature": row.get("air_temperature_c"),
+                        "humidity": row.get("relative_humidity_pct"),
+                        "precipitation": row.get("precipitation_mm"),
+                        "windSpeed": row.get("wind_speed_m_s"),
+                        "windGust": row.get("wind_gust_m_s"),
+                    },
+                    "rail": {
+                        "planned": int(row.get("planned_events") or 0),
+                        "matched": matched,
+                        "delayed": delayed,
+                        "cancelled": int(row.get("cancelled_events") or 0),
+                        "positiveDelayRate": round(delayed / matched, 4) if matched else None,
+                        "meanPositiveDelay": (
+                            round(delay_total / delayed, 1) if delayed else None
+                        ),
+                    },
+                }
+            )
 
     cities: list[dict[str, object]] = []
     for key in CITY_KEYS:
@@ -358,6 +388,11 @@ def dashboard_payload(
         "latestAt": windows["overlap"]["end"], "ageMinutes": None,
         "quality": {"checks": len(criteria), "warnings": 0, "failures": 0},
     })
+    recent_paired_samples = sorted(
+        paired_samples,
+        key=lambda sample: (str(sample["hourUtc"]), str(sample["city"])),
+        reverse=True,
+    )[:24]
 
     return {
         "schemaVersion": 2, "generatedAt": generated.isoformat(), "status": status,
@@ -376,6 +411,24 @@ def dashboard_payload(
             "matchCoverage": round(match_coverage, 4) if total_plans else None,
         },
         "readiness": {"ready": analysis_ready, "criteria": criteria},
+        "liveGoal": {
+            "title": (
+                "Build trustworthy evidence of when weather stress and rail disruption coincide"
+            ),
+            "question": (
+                "Do rain, wind, heat, or other weather conditions coincide with more delays "
+                "or cancellations at the four Rhine–Ruhr stations?"
+            ),
+            "method": (
+                "Join configured DWD weather proxies to DB operational events only when city "
+                "and UTC hour match; report association without claiming causation."
+            ),
+            "currentPairedHours": len(paired_hours),
+            "targetPairedHours": READINESS_MIN_PAIRED_HOURS,
+            "progress": round(min(1.0, len(paired_hours) / READINESS_MIN_PAIRED_HOURS), 4),
+            "state": status,
+        },
+        "pairedTimeline": recent_paired_samples,
         "collection": {
             "pipelineCadenceMinutes": 15, "browserPollSeconds": 60,
             "analysisRetentionDays": 180, "rawEvidenceRetentionDays": 30,
@@ -383,6 +436,14 @@ def dashboard_payload(
                 "The browser checks the latest published JSON every 60 seconds. Collection "
                 "runs separately on a nominal 15-minute GitHub Actions schedule."
             ),
+            "refreshScope": [
+                "DWD weather",
+                "DB plans",
+                "DB changes",
+                "quality checks",
+                "paired analysis",
+            ],
+            "atomicPublication": True,
         },
         "provenance": {
             "gitSha": provenance.get("gitSha") or os.getenv("GITHUB_SHA") or "unknown",

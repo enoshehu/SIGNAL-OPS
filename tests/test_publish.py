@@ -71,6 +71,9 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(payload["pairedHours"], 1)
         self.assertEqual(payload["status"], "OVERLAP DETECTED")
         self.assertFalse(payload["readiness"]["ready"])
+        self.assertEqual(payload["liveGoal"]["currentPairedHours"], 1)
+        self.assertEqual(len(payload["pairedTimeline"]), 1)
+        self.assertTrue(payload["collection"]["atomicPublication"])
 
     def test_delay_rate_uses_matched_events_and_total_minutes_round_once(self) -> None:
         payload = dashboard_payload(
